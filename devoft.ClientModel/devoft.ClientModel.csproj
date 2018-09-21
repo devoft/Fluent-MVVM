@@ -2,13 +2,16 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.17</Version>
+    <Version>1.0.19</Version>
     <PackageId>devoft.ClientModel</PackageId>
-    <Authors>devoft.ClientModel</Authors>
+    <Authors>devoft</Authors>
     <Product>devoft.ClientModel</Product>
     <AssemblyName>devoft.ClientModel</AssemblyName>
     <RootNamespace>devoft.ClientModel</RootNamespace>
     <PackageProjectUrl />
+    <RepositoryUrl>https://github.com/devoft/Fluent-MVVM</RepositoryUrl>
+    <PackageTags>MVVM, WPF, UWP, Xamarin, Blazor, Desktop, NET, Validation, Coerce, Undo, Redo, Scope, Reactive</PackageTags>
+    <Company>devoft</Company>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="devoft.Core" Version="1.0.20" />
