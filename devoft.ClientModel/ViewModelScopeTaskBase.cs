@@ -25,7 +25,7 @@ namespace devoft.ClientModel
         public ViewModelScopeTaskBase(TViewModel viewModel, IEnumerable<IScopeAspect> aspects)
             : base(aspects)
         {
-            viewModel.ActiveScope = this;
+            viewModel.PushActiveScope(this);
             ViewModel = viewModel;
             _aspects.Insert(0, 
                 new PropertyNotificationScopeAspect(
@@ -41,7 +41,7 @@ namespace devoft.ClientModel
             where TScopeTask : ViewModelScopeTaskBase<TScopeTask, TViewModel>, new()
             where TViewModel : ViewModelBase<TViewModel>
         {
-            viewModel.ActiveScope = scopeTask;
+            viewModel.PushActiveScope(scopeTask);
             scopeTask.ViewModel = viewModel;
             return scopeTask;
         }

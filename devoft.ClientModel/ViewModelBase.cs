@@ -191,6 +191,11 @@ namespace devoft.ClientModel
 
         #region [ IUndoable ]
 
+        /// <summary>
+        /// Undo every change recorded on the active edition scope (<see cref="ActiveScope"/>) 
+        /// on the properties where <see cref="ViewModelPropertyDescriptor{TOwner, TResult}.IsRecordingEnabled"/> 
+        /// is set as true
+        /// </summary>
         public async Task Undo()
         {
             if (!_scopesJournal.CanGoBack)
@@ -200,6 +205,11 @@ namespace devoft.ClientModel
             _scopesJournal.GoBack();
         }
 
+        /// <summary>
+        /// Redo every change undone from the active edition scope (<see cref="ActiveScope"/>) 
+        /// on the properties where <see cref="ViewModelPropertyDescriptor{TOwner, TResult}.IsRecordingEnabled"/> 
+        /// is set as true
+        /// </summary>
         public async Task Redo()
         {
             if (!_scopesJournal.CanGoForward)
@@ -211,20 +221,33 @@ namespace devoft.ClientModel
 
         #endregion
 
+        /// <summary>
+        /// The top of the stacked scope information created by nesting edition scopes (<see cref="IViewModelScopeTask{TViewModel}"/>
+        /// </summary>
         public IViewModelScopeTask<TInheritor> ActiveScope
+            => _scopesJournal.IsOutOfrange ? null : _scopesJournal.Peek();
+
+        internal void PushActiveScope(IViewModelScopeTask<TInheritor> scope)
         {
-            get => _scopesJournal.IsOutOfrange ? null : _scopesJournal.Peek();
-            set
-            {
-                if (ActiveScope != value)
-                    _scopesJournal.Push(value);
-            }
+            if (ActiveScope != scope)
+                _scopesJournal.Push(scope);
         }
 
         #region [ Commands ]
 
+        /// <summary>
+        /// Used to access registered commands. Commands can be accessed as dynamic members
+        /// from Xaml bindings on WPF or UWP like: {Binding ViewModel.Commands.MyCommand}
+        /// </summary>
         public ExpandoObject Commands { get; } = new ExpandoObject();
 
+        /// <summary>
+        /// Allows users to register delegate command definitions. After the execution of a command the <see cref="CommandExecuted"/> event is raised
+        /// </summary>
+        /// <param name="name">The name of the command</param>
+        /// <param name="execute">The Execute action</param>
+        /// <param name="canExecuteCondition">The CanExecute function. If this method is not defined it is implemented such that the command can always be executed</param>
+        /// <returns>A <see cref="DelegateNamedCommand"/> object</returns>
         public ICommand RegisterCommand(
             string name,
             Action<object> execute,
@@ -242,12 +265,23 @@ namespace devoft.ClientModel
             return RegisterCommand(name, command);
         }
 
+        /// <summary>
+        /// Register a new instance of <see cref="ICommand"/> with the specified <paramref name="name"/> on the <see cref="Commands"/> dictionary
+        /// </summary>
+        /// <param name="name">The name of the command</param>
+        /// <param name="command">The command registered</param>
+        /// <returns></returns>
         public ICommand RegisterCommand(string name, ICommand command)
         {
             ((IDictionary<string, object>)Commands)[name] = command;
             return command;
         }
 
+        /// <summary>
+        /// Subscribe to command executed event to execute <paramref name="handler"/> if the command executed is <paramref name="commandName"/>
+        /// </summary> 
+        /// <param name="commandName">name of the executed command</param>
+        /// <param name="handler">handler of the <see cref="CommandExecuted"/> event</param>
         public void SubscribeToCommand(string commandName, EventHandler<CommandExecuteEventArgs> handler)
         {
             lock (_commandHandlersByName)
@@ -259,12 +293,20 @@ namespace devoft.ClientModel
 
         Dictionary<string, EventHandler<CommandExecuteEventArgs>> _commandHandlersByName = new Dictionary<string, EventHandler<CommandExecuteEventArgs>>();
         EventHandler<CommandExecuteEventArgs> _commandExecuted;
+        /// <summary>
+        /// Event raised when any command is executed
+        /// </summary>
         public event EventHandler<CommandExecuteEventArgs> CommandExecuted
         {
             add { ConcurrencyHelper.SafeChange(ref _commandExecuted, x => x + value); }
             remove { ConcurrencyHelper.SafeChange(ref _commandExecuted, x => x - value); }
         }
 
+        /// <summary>
+        /// Perform a command execution explicitly
+        /// </summary>
+        /// <param name="commandName">name of the command to execute</param>
+        /// <param name="parameter">parameter to be passed to the command execution</param>
         public void ExecuteCommand(string commandName, object parameter)
             => ((ICommand)((IDictionary<string, object>)Commands)[commandName])?.Execute(parameter);
 
@@ -284,6 +326,9 @@ namespace devoft.ClientModel
 
         #endregion
 
+        /// <summary>
+        /// Releases every command subscription
+        /// </summary>
         public virtual void Dispose()
         {
             foreach (var command in ((IDictionary<string, object>)Commands).Values.OfType<IDisposable>())
