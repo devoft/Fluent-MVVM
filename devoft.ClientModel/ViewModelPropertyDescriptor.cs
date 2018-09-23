@@ -31,7 +31,7 @@ namespace devoft.ClientModel
 
         /// <summary>
         /// Indicates whether recording is enabled on this property. 
-        /// If recording is enabled any change made on the property is recording while it is made on an active edition scope.
+        /// If recording is enabled any change made on the property will be recorded while in an active edition scope. <see cref="ScopeTaskBase{TInheritor}"/>
         /// Recorded property changes can be Undo or Redo
         /// </summary>
         public bool IsRecordingEnabled { get; private set; }
