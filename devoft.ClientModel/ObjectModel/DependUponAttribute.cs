@@ -2,6 +2,7 @@
 
 namespace devoft.ClientModel.ObjectModel
 {
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class DependUponAttribute : Attribute
     {
         public DependUponAttribute(string propertyName)
