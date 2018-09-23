@@ -15,7 +15,7 @@ The class `ViewModelBase<T>` implements `INotifyPropertyChanged` and provides a 
 
 ## Property declaration ##
 
-Use `GetValue<TPropertyType>()` and `SetValue<TPropertyType>(TPropertyType value)` to define get and set accessors on properties
+Use `GetValue<TPropertyType>()` and `SetValue<TPropertyType>(TPropertyType value)` to define get and set accessors on properties.
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
@@ -27,6 +27,29 @@ public class ContactEditor : ViewModelBase<ContactEditor>
 }
 ```
 By doing this, the property change is notified whenever the new value is different from old value and validations succedded.
+
+### Fluent property declarations ###
+
+The `RegisterProperty` method can be use to defined the behaviors of a property about change notifications, validations, etc. Is the starting point of the Fluent API on properties.  For example, in the following code:
+```csharp
+public class ContactEditor : ViewModelBase<ContactEditor>
+{
+	public ContactEditor()
+	{
+		RegisterProperty(vm => vm.FirstName)
+			.Coerce(name => name.Trim())
+	}
+
+	public string FirstName 
+	{ 
+		get => GetValue<string>(); 
+		set => SetValue(value); 
+	}
+}
+```
+The `Coerce` method guaranties that the value is trimmed before set. This configuration is made by using the Fluent API starting with the `RegisterProperty` method
+
+### Computed properties ###
 
 Computed properties can be defined as usual like **FullName** in the following code:
 ```csharp
@@ -119,3 +142,4 @@ devoft.Client.Test is the main testing project
 Just fork the repo and make us your pull requests 
 
 If you want to learn more about this and other projects visit us at [devoft](http://www.devoft.com)
+
