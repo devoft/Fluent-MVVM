@@ -1,10 +1,11 @@
 # Introduction 
 A toolkit help to build MVVM client applications with Blazor, WPF, UWP, Xamarin or Windows Forms. Making `ViewModelBase<TInheritor>` the base class of your view model type (`TInheritor`) your View Model class is empowered with Property Notification, Validations, Property Coertion, Editing Scopes and Undo/Redo; all configured by Fluent API as you can see in the following examples:
-## Table of content ##
-- [View Model Definition](https://github.com/devoft/Fluent-MVVM#view-model-definition)
+## Features ##
+- [View Model base](https://github.com/devoft/Fluent-MVVM#view-model-definition)
 - [Property declaration](https://github.com/devoft/Fluent-MVVM#property-declaration)
 - [Automatic property changes notification propagation](https://github.com/devoft/Fluent-MVVM#property-change-notification-propagation)
 - [Automatic property value coercion](https://github.com/devoft/Fluent-MVVM#coerce-property-value)
+- [Validation](https://github.com/devoft/Fluent-MVVM#validation)
 - [Putting it all together](https://github.com/devoft/Fluent-MVVM#putting-it-all-together)
  
 ## View Model Definition ##
@@ -12,7 +13,7 @@ Start by inheriting from `ViewModelBase<YourClass>` like this:
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	...
+    ...
 }
 ```
 Note that the generic parameter `T` on `ViewModelBase<T>` is substituted by your view model (`ContactEditor` in the example)
@@ -25,11 +26,11 @@ Use `GetValue<TPropertyType>()` and `SetValue<TPropertyType>(TPropertyType value
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public string FirstName 
-	{ 
-		get => GetValue<string>(); 
-		set => SetValue(value); 
-	}
+    public string FirstName 
+    { 
+    	get => GetValue<string>(); 
+    	set => SetValue(value); 
+    }
 }
 ```
 By doing this, the property change is notified whenever the new value is different from old value and validations succedded.
@@ -40,31 +41,31 @@ The `RegisterProperty` method can be use to defined the behaviors of a property 
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public ContactEditor()
-	{
-		RegisterProperty(vm => vm.FirstName)
-			.Coerce(name => name.Trim())
-	}
-
-	public string FirstName 
-	{ 
-		get => GetValue<string>(); 
-		set => SetValue(value); 
-	}
+    public static ContactEditor()
+    {
+    	RegisterProperty(vm => vm.FirstName)
+    		.Coerce(name => name.Trim())
+    }
+    
+    public string FirstName 
+    { 
+    	get => GetValue<string>(); 
+    	set => SetValue(value); 
+    }
 }
 ```
 The `Coerce` method guaranties that the value is trimmed before set. This configuration is made by using the Fluent API starting with the `RegisterProperty` method
 
 ### Computed properties ###
 
-Computed properties can be defined as usual like **FullName** in the following code:
+Computed properties is defined as usual like **FullName** in the following code:
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public string FirstName { get => GetValue<string>(); set => SetValue(value); }
-	public string LastName { get => GetValue<string>(); set => SetValue(value); }
-	
-	public string FullName => $"{FirstName} {LastName}";
+    public string FirstName { get => GetValue<string>(); set => SetValue(value); }
+    public string LastName { get => GetValue<string>(); set => SetValue(value); }
+    
+    public string FullName => $"{FirstName} {LastName}";
 }
 ```
 ## Property change notification propagation ##
@@ -73,12 +74,12 @@ By marking computed properties with the `[DependUpon(dependencyProperty)]` attri
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public string FirstName { get => GetValue<string>(); set => SetValue(value); }
-	public string LastName { get => GetValue<string>(); set => SetValue(value); }
-
-	[DependUpon(nameof(FirstName))]	
-	[DependUpon(nameof(LastName))]	
-	public string FullName => $"{FirstName} {LastName}";
+    public string FirstName { get => GetValue<string>(); set => SetValue(value); }
+    public string LastName { get => GetValue<string>(); set => SetValue(value); }
+    
+    [DependUpon(nameof(FirstName))]	
+    [DependUpon(nameof(LastName))]	
+    public string FullName => $"{FirstName} {LastName}";
 }
 ```
 Such that the following code:
@@ -92,17 +93,17 @@ Propagation happens from one property to another. Such that in the following cod
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public string FirstName { get => GetValue<string>(); set => SetValue(value); }
-	public string LastName { get => GetValue<string>(); set => SetValue(value); }
-	public string Prefix { get => GetValue<string>(); set => SetValue(value); }
-
-	[DependUpon(nameof(FirstName))]	
-	[DependUpon(nameof(LastName))]	
-	public string FullName => $"{FirstName} {LastName}";
-
-	[DependUpon(nameof(Prefix))]	
-	[DependUpon(nameof(FullName))]	
-	public string FormalName => $"{Prefix} {FullName}";
+    public string FirstName { get => GetValue<string>(); set => SetValue(value); }
+    public string LastName { get => GetValue<string>(); set => SetValue(value); }
+    public string Prefix { get => GetValue<string>(); set => SetValue(value); }
+    
+    [DependUpon(nameof(FirstName))]	
+    [DependUpon(nameof(LastName))]	
+    public string FullName => $"{FirstName} {LastName}";
+    
+    [DependUpon(nameof(Prefix))]	
+    [DependUpon(nameof(FullName))]	
+    public string FormalName => $"{Prefix} {FullName}";
 }
 ```
 Any change made on **FirstName** or **LastName** will raise `PropertyChanged` 3 times: one for the original porperty, another for **FullName** and because **FormalName** depends upon **FullName** another notification is raised for **FormalName** too. 
@@ -114,22 +115,22 @@ The property dependencies can be defined also with a fluent api starting from `R
 ``` csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public ContactEditor()
-	{
-		RegisterProperty(vm => vm.FullName)
-			.DependUpon(nameof(FirstName), nameof(LastName));
+    public static ContactEditor()
+    {
+        RegisterProperty(vm => vm.FullName)
+            .DependUpon(nameof(FirstName), nameof(LastName));
 
-		RegisterProperty(vm => vm.FormalName)
-			.DependUpon(nameof(Prefix))
-			.DependUpon(nameof(FullName));
-	}
+        RegisterProperty(vm => vm.FormalName)
+            .DependUpon(nameof(Prefix))
+            .DependUpon(nameof(FullName));
+    }
 
-	public string FirstName { get => GetValue<string>(); set => SetValue(value); }
-	public string LastName { get => GetValue<string>(); set => SetValue(value); }
-	public string Prefix { get => GetValue<string>(); set => SetValue(value); }
+    public string FirstName { get => GetValue<string>(); set => SetValue(value); }
+    public string LastName { get => GetValue<string>(); set => SetValue(value); }
+    public string Prefix { get => GetValue<string>(); set => SetValue(value); }
 
-	public string FullName => $"{FirstName} {LastName}";
-	public string FormalName => $"{Prefix} {FullName}";
+    public string FullName => $"{FirstName} {LastName}";
+    public string FormalName => $"{Prefix} {FullName}";
 }
 ```
 > Note that you can even use a single call to **DependUpon** with many property names or even chain many **DependUpon** calls
@@ -143,12 +144,12 @@ Use fluent API to coerce any value assigned to the properties:
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public ContactEditor()
-	{
-		RegisterProperty(c => c.FirstName)
-			.Coerce(name => name.Trim(), 
-				name => char.ToUpper(name[0]) + name.Substring(1).ToLower());
-	}
+    public static ContactEditor()
+    {
+        RegisterProperty(c => c.FirstName)
+            .Coerce(name => name.Trim(), 
+                    name => char.ToUpper(name[0]) + name.Substring(1).ToLower());
+    }
 }
 
 ...
@@ -169,12 +170,12 @@ Use `Validate` to add validation rules that will be applied before the value is 
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
-	public ContactEditor()
-	{
-            RegisterProperty(x => x.LastName)
+    public static ContactEditor()
+    {
+        RegisterProperty(x => x.LastName)
                 .Validate((vm, val, vr) => vr.Error(string.IsNullOrWhiteSpace(val), 
                                                     "LastName cannot be empty or whitespace"));
-	}
+    }
 }
 ```
 Validation rules are functions with 3 parameters:
@@ -196,10 +197,10 @@ Validation Results can be of type: **Error**, **Warning** or **Information**. Va
 Property changes and its propagation will happen always after the coercions are applied on the source property. E.g:
 ```csharp
 contactEditor.PropertyChanged += (s.e) => 
-	{
-		if (e.PropertyName == "FullName")
-			Console.WriteLine(contactEditor.FullName); // "John"
-	};
+    {
+    	if (e.PropertyName == "FullName")
+    		Console.WriteLine(contactEditor.FullName); // "John"
+    };
 contactEditor.FirstName = " john   ";
 ```
 
