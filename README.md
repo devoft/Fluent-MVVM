@@ -5,6 +5,8 @@ A toolkit help to build MVVM client applications with Blazor, WPF, UWP, Xamarin 
 - [Property declaration](https://github.com/devoft/Fluent-MVVM#property-declaration)
 - [Automatic property changes notification propagation](https://github.com/devoft/Fluent-MVVM#property-change-notification-propagation)
 - [Automatic property value coercion](https://github.com/devoft/Fluent-MVVM#coerce-property-value)
+- [Putting it all together](https://github.com/devoft/Fluent-MVVM#putting-it-all-together)
+ 
 ## View Model Definition ##
 Start by inheriting from `ViewModelBase<YourClass>` like this:
 ```csharp
@@ -161,7 +163,19 @@ This can be useful to automaticaly "fix" values introduced through declarative t
 ```
 > Coerce transformation will occur in the same order they are defined
 
+## Putting it all together ##
 
+### DependUpon with Coerce ###
+Property changes and its propagation will happen always after the coercions are applied on the source property. E.g:
+```csharp
+contactEditor.PropertyChanged += (s.e) => 
+	{
+		if (e.PropertyName == "FullName")
+			Console.WriteLine(contactEditor.FullName); // "John"
+	};
+contactEditor.FirstName = " john   ";
+```
+ 
 # Getting Started
 Just add devoft.Client as a dependency and start coding
 
