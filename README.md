@@ -1,6 +1,10 @@
 # Introduction 
 A toolkit help to build MVVM client applications with Blazor, WPF, UWP, Xamarin or Windows Forms. Making `ViewModelBase<TInheritor>` the base class of your view model type (`TInheritor`) your View Model class is empowered with Property Notification, Validations, Property Coertion, Editing Scopes and Undo/Redo; all configured by Fluent API as you can see in the following examples:
-
+## Table of content ##
+- [View Model Definition](https://github.com/devoft/Fluent-MVVM#view-model-definition)
+- [Property declaration](https://github.com/devoft/Fluent-MVVM#property-declaration)
+- [Automatic property changes notification propagation](https://github.com/devoft/Fluent-MVVM#property-change-notification-propagation)
+- [Automatic property value coercion](https://github.com/devoft/Fluent-MVVM#coerce-property-value)
 ## View Model Definition ##
 Start by inheriting from `ViewModelBase<YourClass>` like this:
 ```csharp
@@ -61,7 +65,7 @@ public class ContactEditor : ViewModelBase<ContactEditor>
 	public string FullName => $"{FirstName} {LastName}";
 }
 ```
-### Property change notification propagation ###
+## Property change notification propagation ##
 
 By marking computed properties with the `[DependUpon(dependencyProperty)]` attribute, every property-change notification happening on the *dependencyProperty* is propagated to this property, which means that another change notification will be raised for this property. In the following code, **FullName** is attributed with `[DependUpon]`:
 ```csharp
@@ -131,6 +135,32 @@ public class ContactEditor : ViewModelBase<ContactEditor>
 This way the declarations of the attribute `[DependUpon(...)]` are not longer required on every computed property.
 
 > Consider to use fluent api from static constructor to prevent performance overhead because of continuous redeclarations
+
+## Coerce Property Value ##
+Use fluent API to coerce any value assigned to the properties:
+```csharp
+public class ContactEditor : ViewModelBase<ContactEditor>
+{
+	public ContactEditor()
+	{
+		RegisterProperty(c => c.FirstName)
+			.Coerce(name => name.Trim(), 
+				name => char.ToUpper(name[0]) + name.Substring(1).ToLower());
+	}
+}
+
+...
+
+contactEditor.FirstName = " john   "; // contactEditor.FirstName == "John"
+```
+
+This can be useful to automaticaly "fix" values introduced through declarative two-way bindings:
+
+```xml
+<TextBox Text="{Binding FirstName, Mode=TwoWay}"/>
+```
+> Coerce transformation will occur in the same order they are defined
+
 
 # Getting Started
 Just add devoft.Client as a dependency and start coding
