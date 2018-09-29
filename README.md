@@ -163,9 +163,36 @@ This can be useful to automaticaly "fix" values introduced through declarative t
 ```
 > Coerce transformation will occur in the same order they are defined
 
+## Validation ##
+
+Use `Validate` to add validation rules that will be applied before the value is set to the property:
+```csharp
+public class ContactEditor : ViewModelBase<ContactEditor>
+{
+	public ContactEditor()
+	{
+            RegisterProperty(x => x.LastName)
+                .Validate((vm, val, vr) => vr.Error(string.IsNullOrWhiteSpace(val), 
+                                                    "LastName cannot be empty or whitespace"));
+	}
+}
+```
+Validation rules are functions with 3 parameters:
+- *vm:* The view model itself (this)
+- *val:* The value to be validated
+- *vr:* An instance of `ValidationResultCollection`, which is a collection of every validation result applied to this property and any other in the object.
+
+`Validate` has the following optional parameters too:
+- `notifyChangeOnValidationError=true`: see [Putting it all together: Property change with validation](https://github.com/devoft/Fluent-MVVM#property-change-with-validation)
+- `BehaviorOnCoerce=ValidationErrorBehavior.AfterCoerce`): see [Putting it all together: Coerce with validation](https://github.com/devoft/Fluent-MVVM#coerce-with-validation)
+- `ContinueOnValidationError=true`: If this param is set to false then any error detected during validation will (silently) abort the property change.
+
+### Validation Results ###
+Validation Results can be of type: **Error**, **Warning** or **Information**. Validation is considered succeded if there is no error in the collection when validation finishes.
+
 ## Putting it all together ##
 
-### DependUpon with Coerce ###
+### Property change progagation with Coerce ###
 Property changes and its propagation will happen always after the coercions are applied on the source property. E.g:
 ```csharp
 contactEditor.PropertyChanged += (s.e) => 
@@ -175,9 +202,15 @@ contactEditor.PropertyChanged += (s.e) =>
 	};
 contactEditor.FirstName = " john   ";
 ```
- 
+
+### Property change with validation ###
+
+Setting optional parameter: `notifyChangeOnValidationError` of the `Validate` method, you can decide whether the property change notification is raise even when validation fails.
+
+### Coerce with validation ###
+
 # Getting Started
-Just add devoft.Client as a dependency and start coding
+Just add devoft.ClientModel as a dependency and start coding
 
 # Build and Test
 devoft.Client.Test is the main testing project 
