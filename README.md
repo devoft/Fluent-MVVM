@@ -173,23 +173,31 @@ public class ContactEditor : ViewModelBase<ContactEditor>
     public static ContactEditor()
     {
         RegisterProperty(x => x.LastName)
-                .Validate((vm, val, vr) => vr.Error(string.IsNullOrWhiteSpace(val), 
-                                                    "LastName cannot be empty or whitespace"));
+                .Validate((viewModel, value, validationResultCollection) 
+                           => validationResultCollection.Error(string.IsNullOrWhiteSpace(val), 
+                                                               "LastName cannot be empty or whitespace"));
     }
 }
 ```
-Validation rules are functions with 3 parameters:
-- *vm:* The view model itself (this)
-- *val:* The value to be validated
-- *vr:* An instance of `ValidationResultCollection`, which is a collection of every validation result applied to this property and any other in the object.
-
-`Validate` has the following optional parameters too:
+`Validate` has the following optional parameters:
 - `notifyChangeOnValidationError=true`: see [Putting it all together: Property change with validation](https://github.com/devoft/Fluent-MVVM#property-change-with-validation)
 - `BehaviorOnCoerce=ValidationErrorBehavior.AfterCoerce`): see [Putting it all together: Coerce with validation](https://github.com/devoft/Fluent-MVVM#coerce-with-validation)
 - `ContinueOnValidationError=true`: If this param is set to false then any error detected during validation will (silently) abort the property change.
 
+Validations are applied in the same order they are defined
+
 ### Validation Results ###
 Validation Results can be of type: **Error**, **Warning** or **Information**. Validation is considered succeded if there is no error in the collection when validation finishes.
+Each validation rule can add 1, many or 0 validation results. Use the following `ViewModelBase<T>` methods:
+- `GetValidationResults(propertyName)` to know the validation results at any moment. Then, use `Validate()` of this `ValidationResultCollection` if you want to apply additional validations from imperative code
+- `ClearValidationResult()` to reset validation results
+ 
+
+### INotifyDataErrorInfo support ###
+`ViewModelBase<T>` implements `INotifyDataErrorInfo`, so it is integrated with binding and validation system of WPF and UWP, and
+its members can be used to know whether is it some validation errors (`HasError`), whether the appear os disappear (`ErrorChanged`) 
+and what validation error is happening per property.
+> **Warnings** and **Informations** is considered Errors too in the `INotifyDataErrorInfo` logic
 
 ## Putting it all together ##
 
@@ -209,6 +217,24 @@ contactEditor.FirstName = " john   ";
 Setting optional parameter: `notifyChangeOnValidationError` of the `Validate` method, you can decide whether the property change notification is raise even when validation fails.
 
 ### Coerce with validation ###
+
+The `Validate` method has the parameter `BehaviorOnCoerce` used to indicate whether some specific validation rule should be applied before or after the Coerce, or both.
+```csharp
+public class ContactEditor : ViewModelBase<ContactEditor>
+{
+    public static ContactEditor()
+    {
+        RegisterProperty(x => x.Name)
+                .Coerce(x => x[0].ToUpper() + x.Substring(1).ToLower())
+                .Validate((t, v, vr) => vr.Error<NotNull>(v) && v.Length > 1, 
+                          continueOnValidationError: false,
+                          when: ValidationErrorBehavior.BeforeCoerce);
+    }
+}
+```
+
+Because the validation will apply before coerce and because `continueOnValidationError=false`
+it is safe to apply the Coerce with no errors
 
 # Getting Started
 Just add devoft.ClientModel as a dependency and start coding
