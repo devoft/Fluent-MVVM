@@ -43,7 +43,7 @@ namespace devoft.ClientModel
         {
             viewModel.PushActiveScope(scopeTask);
             scopeTask.ViewModel = viewModel;
-            return scopeTask;
+            return scopeTask;I
         }
 
         public static TScopeTask Configure<TScopeTask, TViewModel>(this TScopeTask scopeTask, TViewModel viewModel)

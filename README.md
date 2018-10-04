@@ -1,6 +1,6 @@
 # Introduction 
 A toolkit help to build MVVM client applications with Blazor, WPF, UWP, Xamarin or Windows Forms. Making `ViewModelBase<TInheritor>` the base class of your view model type (`TInheritor`) your View Model class is empowered with Property Notification, Validations, Property Coertion, Editing Scopes and Undo/Redo; all configured by Fluent API as you can see in the following examples:
-## Features ##
+# Features #
 - [View Model base](https://github.com/devoft/Fluent-MVVM#view-model-definition)
 - [Property declaration](https://github.com/devoft/Fluent-MVVM#property-declaration)
 - [Automatic property changes notification propagation](https://github.com/devoft/Fluent-MVVM#property-change-notification-propagation)
@@ -199,6 +199,24 @@ its members can be used to know whether is it some validation errors (`HasError`
 and what validation error is happening per property.
 > **Warnings** and **Informations** is considered Errors too in the `INotifyDataErrorInfo` logic
 
+## Commands ##
+Overrides `RegisterCommand` to add commands to the View Model:
+```csharp
+ICommand command = RegisterCommand("RegisterNewUser",
+				execute: x => RegisterUser(x),
+				canExecuteCondition: x => !ExistsUser(x));
+```
+This way commands can be bound in WPF and UWP like this:
+
+```xml
+<Button Command="{Binding ViewModel.Commands.RegisterNewUser}"/>
+```
+
+> Note that this method creates an object which is `System.Windows.Input.ICommand` 
+
+Every command registered this way will be invalidated when any property changes. 
+See: [Putting it all together: Invalidate commands on property changes](https://github.com/devoft/Fluent-MVVM#invalidate-commands-on-property-changes)
+
 ## Putting it all together ##
 
 ### Property change progagation with Coerce ###
@@ -235,6 +253,9 @@ public class ContactEditor : ViewModelBase<ContactEditor>
 
 Because the validation will apply before coerce and because `continueOnValidationError=false`
 it is safe to apply the Coerce with no errors
+
+### Invalidate commands on property changes ###
+Every time one property is changed all registered commands are invalidated so their `CanExecute` method will be called and their event `CanExecuteChanged` will be raised.
 
 # Getting Started
 Just add devoft.ClientModel as a dependency and start coding
