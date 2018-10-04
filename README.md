@@ -200,9 +200,9 @@ and what validation error is happening per property.
 > **Warnings** and **Informations** is considered Errors too in the `INotifyDataErrorInfo` logic
 
 ## Commands ##
-Overrides `RegisterCommand` to add commands to the View Model:
+Use `RegisterCommand` to add commands to the View Model:
 ```csharp
-ICommand command = RegisterCommand("RegisterNewUser",
+ICommand cmd = RegisterCommand("RegisterNewUser",
 				execute: x => RegisterUser(x),
 				canExecuteCondition: x => !ExistsUser(x));
 ```
