@@ -16,10 +16,12 @@ namespace devoft.ClientModel.ObjectModel
         private PropertyNotificationManager() { }
         public static PropertyNotificationManager<T> Instance { get; } = new PropertyNotificationManager<T>();
 
-        public void NotifyPropertyChanged(T target, string propertyName, Action<T, string> performNotification)
+        public void NotifyPropertyChanged(T target, Action<T, string> performNotification, string[] propertyNames)
         {
             var visitedProperties = new HashSet<string>();
-            NotifyPropertyChanged(propertyName);
+
+            foreach (var propertyName in propertyNames)
+                NotifyPropertyChanged(propertyName);
 
             void NotifyPropertyChanged(string propName)
             {
@@ -27,7 +29,7 @@ namespace devoft.ClientModel.ObjectModel
                     return;
 
                 if (performNotification != null)
-                    performNotification(target, propertyName);
+                    performNotification(target, propName);
                 else
                     target.OnPropertyChanged(propName);
 
@@ -37,17 +39,20 @@ namespace devoft.ClientModel.ObjectModel
             }
         }
 
-        public static void DependUpon(string propertyName, params string[] dependencies)
+        public static void DependOn(string propertyName, params string[] dependencies)
         {
             var dep = Instance._dependencies;
             lock (dep)
-               foreach (var dependUpon in dependencies)
-                   dep.Ensure(dependUpon)
+               foreach (var DependOn in dependencies)
+                   dep.Ensure(DependOn)
                       .Add(propertyName);
         }
 
         public static void PropagateNotification(T target, string propertyName, Action<T,string> performNotification = null)
-            => Instance.NotifyPropertyChanged(target, propertyName, performNotification);
+            => Instance.NotifyPropertyChanged(target, performNotification, new[] { propertyName });
+
+        public static void PropagateNotification(T target, string[] propertyNames, Action<T, string> performNotification = null)
+            => Instance.NotifyPropertyChanged(target, performNotification, propertyNames);
 
         public IEnumerable<string> DependenciesFor(string propertyName)
         {
@@ -65,8 +70,8 @@ namespace devoft.ClientModel.ObjectModel
             lock (_dependencies)
             {
                 foreach (var property in typeof(T).GetProperties())
-                    foreach (var dependUpon in property.GetCustomAttributes<DependUponAttribute>(true))
-                        _dependencies.Ensure(dependUpon.PropertyName)
+                    foreach (var DependOn in property.GetCustomAttributes<DependOnAttribute>(true))
+                        _dependencies.Ensure(DependOn.PropertyName)
                                      .Add(property.Name);
 
                 _metadataInitialized = true;

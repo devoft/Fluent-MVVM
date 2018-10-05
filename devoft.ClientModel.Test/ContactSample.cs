@@ -32,11 +32,11 @@ namespace devoft.ClientModel.Test
                 .Coerce(name => name.Trim());
 
             RegisterProperty(x => x.FullName)
-                .DependUpon(nameof(Name), nameof(LastName))
+                .DependOn(nameof(Name), nameof(LastName))
                 .Validate((t, v, vr) => vr.Error(string.IsNullOrWhiteSpace(v), "FullName cannot be empty or whitespace"));
 
             RegisterProperty(x => x.Age)
-                .DependUpon(x => x.Birthdate)
+                .DependOn(x => x.Birthdate)
                 .Validate((t, v, vr) => vr.Error(v < 0, "Age cannot be negative"));
 
 

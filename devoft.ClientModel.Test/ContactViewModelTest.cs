@@ -132,7 +132,7 @@ namespace devoft.ClientModel.Test
         public void TestPropertyNotificationPropagation()
         {
             RegisterProperty(x => x.FullName)
-                .DependUpon(nameof(Name), nameof(LastName));
+                .DependOn(nameof(Name), nameof(LastName));
             int[] array = new int[1];
             PropertyChangedEventHandler handler = (e, s) => array[0]++;
             PropertyChanged += handler;
@@ -142,6 +142,7 @@ namespace devoft.ClientModel.Test
             PropertyChanged -= handler;
         }
 
+        
         [TestMethod]
         public async Task NotificationPrunedOnScope()
         {
@@ -152,25 +153,32 @@ namespace devoft.ClientModel.Test
             RegisterProperty(x => x.Name)
                 .EnableRecording();
 
+            RegisterProperty(x => x.LastName)
+                .EnableRecording();
+
+            RegisterProperty(x => x.FullName)
+                 .DependOn(x => x.Name)
+                 .DependOn(x => x.LastName)
+                 .EnableRecording();
+
+
             var observer = new FunctionObserver<object>(s => Console.WriteLine(s));
-            var result = await ScopeTaskMoq
-                            .Define(sc =>
+            var result = await BeginScope(sc =>
                                     {
                                         Name = "Abc";
                                         Name = "Bcd";
-                                        Name = "Cde";
-                                        Name = "Def";
-                                        Name = "Efg";
+                                        LastName = "Cde";
+                                        LastName = "Def";
+                                        LastName = "Efg";
                                     })
-                            .Configure(this)
                             .Observe(ob => ob.Subscribe(observer))
                             .StartAsync();
 
             PropertyChanged -= handler;
 
-            Assert.AreEqual("Efg", Name);
+            Assert.AreEqual("Bcd Efg", FullName);
             Assert.AreEqual(0, _console.Lines.Count);
-            Assert.IsTrue(array[0] < 5);
+            Assert.IsTrue(array[0] == 3);
         }
 
         [TestMethod]
@@ -182,21 +190,17 @@ namespace devoft.ClientModel.Test
             RegisterProperty(x => x.LastName)
                 .EnableRecording();
 
-            var scope1 = ScopeTaskMoq
-                            .Define(sc =>
+            var scope1 = BeginScope(sc =>
                             {
                                 Name = "Aaaa";
                                 LastName = "Bbbb";
-                            })
-                            .Configure(this);
+                            });
 
-            var scope2 = ScopeTaskMoq
-                            .Define(sc =>
+            var scope2 = BeginScope(sc =>
                             {
                                 Name = "Cccc";
                                 LastName = "Dddd";
-                            })
-                            .Configure(this);
+                            });
 
             await scope1.StartAsync();
             await scope2.StartAsync();
@@ -223,21 +227,13 @@ namespace devoft.ClientModel.Test
             RegisterProperty(x => x.LastName)
                 .EnableRecording();
 
-            var scope1 = ScopeTaskMoq
-                            .Define(async sc =>
+            var scope1 = BeginScope(async sc =>
                             {
                                 Name = "Aaaa";
-                                var scope2 = ScopeTaskMoq
-                                    .Define(subScope =>
-                                    {
-                                        Name = "Cccc";
-                                    })
-                                    .ScopedTo(sc)
-                                    .Configure(this);
+                                var scope2 = BeginScope(subScope => Name = "Cccc", sc);
                                 await scope2.StartAsync();
                                 await scope2.UndoAsync();
-                            })
-                            .Configure(this);
+                            });
             await scope1.StartAsync();
         }
 
@@ -251,7 +247,7 @@ namespace devoft.ClientModel.Test
         #endregion
 
         #region [ = Age ]
-        [DependUpon(nameof(Birthdate))]
+        [DependOn(nameof(Birthdate))]
         public int Age
         {
             get => DateTime.Today.Year - Birthdate.Year;

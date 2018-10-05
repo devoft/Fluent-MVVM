@@ -103,25 +103,25 @@ namespace devoft.ClientModel
         }
 
         /// <summary>
-        /// Tells whether the target property depends upon the property referenced by the param <paramref name="exp"/>
+        /// Tells whether the target property depends on the property referenced by the param <paramref name="exp"/>
         /// </summary>
         /// <typeparam name="TDependencyResult">The type of the dependency property</typeparam>
         /// <param name="exp">Expression refering the dependency property</param>
         /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> DependUpon<TDependencyResult>(Expression<Func<TOwner, TDependencyResult>> exp)
+        public ViewModelPropertyDescriptor<TOwner, TResult> DependOn<TDependencyResult>(Expression<Func<TOwner, TDependencyResult>> exp)
         {
-            PropertyNotificationManager<TOwner>.DependUpon(PropertyName, ((MemberExpression)exp.Body).Member.Name);
+            PropertyNotificationManager<TOwner>.DependOn(PropertyName, ((MemberExpression)exp.Body).Member.Name);
             return this;
         }
 
         /// <summary>
-        /// Tells whether the target property depends upon the properties referenced by the param <paramref name="propertyNames"/>
+        /// Tells whether the target property depends on the properties referenced by the param <paramref name="propertyNames"/>
         /// </summary>
         /// <param name="propertyNames">names of the dependency properties</param>
         /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> DependUpon(params string[] propertyNames)
+        public ViewModelPropertyDescriptor<TOwner, TResult> DependOn(params string[] propertyNames)
         {
-            PropertyNotificationManager<TOwner>.DependUpon(PropertyName, propertyNames);
+            PropertyNotificationManager<TOwner>.DependOn(PropertyName, propertyNames);
             return this;
         }
 

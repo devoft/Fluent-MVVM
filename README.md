@@ -6,6 +6,10 @@ A toolkit help to build MVVM client applications with Blazor, WPF, UWP, Xamarin 
 - [Automatic property changes notification propagation](https://github.com/devoft/Fluent-MVVM#property-change-notification-propagation)
 - [Automatic property value coercion](https://github.com/devoft/Fluent-MVVM#coerce-property-value)
 - [Validation](https://github.com/devoft/Fluent-MVVM#validation)
+- [Commands](https://github.com/devoft/Fluent-MVVM#commands)
+- [Scopes](https://github.com/devoft/Fluent-MVVM#scopes)
+  - [Property change notification optimized](https://github.com/devoft/Fluent-MVVM#property-change-notification-optimized)
+  - [Undo](https://github.com/devoft/Fluent-MVVM#undo)
 - [Putting it all together](https://github.com/devoft/Fluent-MVVM#putting-it-all-together)
  
 ## View Model Definition ##
@@ -70,15 +74,15 @@ public class ContactEditor : ViewModelBase<ContactEditor>
 ```
 ## Property change notification propagation ##
 
-By marking computed properties with the `[DependUpon(dependencyProperty)]` attribute, every property-change notification happening on the *dependencyProperty* is propagated to this property, which means that another change notification will be raised for this property. In the following code, **FullName** is attributed with `[DependUpon]`:
+By marking computed properties with the `[DependOn(dependencyProperty)]` attribute, every property-change notification happening on the *dependencyProperty* is propagated to this property, which means that another change notification will be raised for this property. In the following code, **FullName** is attributed with `[DependOn]`:
 ```csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
     public string FirstName { get => GetValue<string>(); set => SetValue(value); }
     public string LastName { get => GetValue<string>(); set => SetValue(value); }
     
-    [DependUpon(nameof(FirstName))]	
-    [DependUpon(nameof(LastName))]	
+    [DependOn(nameof(FirstName))]	
+    [DependOn(nameof(LastName))]	
     public string FullName => $"{FirstName} {LastName}";
 }
 ```
@@ -97,32 +101,32 @@ public class ContactEditor : ViewModelBase<ContactEditor>
     public string LastName { get => GetValue<string>(); set => SetValue(value); }
     public string Prefix { get => GetValue<string>(); set => SetValue(value); }
     
-    [DependUpon(nameof(FirstName))]	
-    [DependUpon(nameof(LastName))]	
+    [DependOn(nameof(FirstName))]	
+    [DependOn(nameof(LastName))]	
     public string FullName => $"{FirstName} {LastName}";
     
-    [DependUpon(nameof(Prefix))]	
-    [DependUpon(nameof(FullName))]	
+    [DependOn(nameof(Prefix))]	
+    [DependOn(nameof(FullName))]	
     public string FormalName => $"{Prefix} {FullName}";
 }
 ```
-Any change made on **FirstName** or **LastName** will raise `PropertyChanged` 3 times: one for the original porperty, another for **FullName** and because **FormalName** depends upon **FullName** another notification is raised for **FormalName** too. 
+Any change made on **FirstName** or **LastName** will raise `PropertyChanged` 3 times: one for the original porperty, another for **FullName** and because **FormalName** depends on **FullName** another notification is raised for **FormalName** too. 
 
 Note that any change on the **Prefix** property will raised `PropertyChanged` only for 2 properties **Prefix** and **FormalName**
 
-#### DependUpon: Fluent declaration ####
-The property dependencies can be defined also with a fluent api starting from `RegisterProperty` method and continuing with the `DependUpon` fluent declaration as follows:
+#### DependOn: Fluent declaration ####
+The property dependencies can be defined also with a fluent api starting from `RegisterProperty` method and continuing with the `DependOn` fluent declaration as follows:
 ``` csharp
 public class ContactEditor : ViewModelBase<ContactEditor>
 {
     public static ContactEditor()
     {
         RegisterProperty(vm => vm.FullName)
-            .DependUpon(nameof(FirstName), nameof(LastName));
+            .DependOn(nameof(FirstName), nameof(LastName));
 
         RegisterProperty(vm => vm.FormalName)
-            .DependUpon(nameof(Prefix))
-            .DependUpon(nameof(FullName));
+            .DependOn(nameof(Prefix))
+            .DependOn(nameof(FullName));
     }
 
     public string FirstName { get => GetValue<string>(); set => SetValue(value); }
@@ -133,9 +137,9 @@ public class ContactEditor : ViewModelBase<ContactEditor>
     public string FormalName => $"{Prefix} {FullName}";
 }
 ```
-> Note that you can even use a single call to **DependUpon** with many property names or even chain many **DependUpon** calls
+> Note that you can even use a single call to **DependOn** with many property names or even chain many **DependOn** calls
  
-This way the declarations of the attribute `[DependUpon(...)]` are not longer required on every computed property.
+This way the declarations of the attribute `[DependOn(...)]` are not longer required on every computed property.
 
 > Consider to use fluent api from static constructor to prevent performance overhead because of continuous redeclarations
 
@@ -202,9 +206,15 @@ and what validation error is happening per property.
 ## Commands ##
 Use `RegisterCommand` to add commands to the View Model:
 ```csharp
-ICommand cmd = RegisterCommand("RegisterNewUser",
-				execute: x => RegisterUser(x),
-				canExecuteCondition: x => !ExistsUser(x));
+public override Task InitializeAsync(IDispatcher dispatcher = null)
+{
+    ICommand cmd = RegisterCommand("RegisterNewUser",
+                                   execute: x => RegisterUser(x),
+                                   canExecuteCondition: x => !ExistsUser(x));
+
+    return base.InitializeAsync(dispatcher);
+}
+
 ```
 This way commands can be bound in WPF and UWP like this:
 
@@ -213,9 +223,40 @@ This way commands can be bound in WPF and UWP like this:
 ```
 
 > Note that this method creates an object which is `System.Windows.Input.ICommand` 
+> It is recommended to register commands from the `InitializeAsync` method
 
 Every command registered this way will be invalidated when any property changes. 
 See: [Putting it all together: Invalidate commands on property changes](https://github.com/devoft/Fluent-MVVM#invalidate-commands-on-property-changes)
+
+## Scopes ##
+Use Scopes to work with the View Model features in a transactional way. The following example shows how to use scopes after configuring View Model for them. See how in the next section.
+
+### Property change notification optimized ###
+```csharp
+var scope = vm.BeginScope(sc =>
+            {
+               vm.FirstName = "Johnn";
+               vm.FirstName = "John";
+               vm.LastName = "Smit";
+               vm.LastName = "Smith";
+            });
+await scope.StartAsync();
+```
+Doing this, the PropertyChanged event is raised once for `FirstName`, another time for `LastName`, and even when `FullName` is depending on both, it will be notified only once from the scope.
+
+### Undo ###
+```csharp
+var vm.FirstName = "Unknown";
+var scope = vm.BeginScope(sc =>
+            {
+               ...
+               vm.FirstName = "John";
+            });
+await scope.StartAsync();
+await scope.UndoAsync();
+var name = vm.FirstName // name == "Unknown"
+```
+
 
 ## Putting it all together ##
 

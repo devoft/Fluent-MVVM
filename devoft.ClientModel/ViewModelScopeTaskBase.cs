@@ -29,7 +29,7 @@ namespace devoft.ClientModel
             ViewModel = viewModel;
             _aspects.Insert(0, 
                 new PropertyNotificationScopeAspect(
-                    (obj, prop) => PropertyNotificationManager<TViewModel>.PropagateNotification(viewModel, prop)));
+                    (obj, props) => PropertyNotificationManager<TViewModel>.PropagateNotification(viewModel, props)));
         }
 
         public TViewModel ViewModel { get; set; }
@@ -43,7 +43,7 @@ namespace devoft.ClientModel
         {
             viewModel.PushActiveScope(scopeTask);
             scopeTask.ViewModel = viewModel;
-            return scopeTask;I
+            return scopeTask;
         }
 
         public static TScopeTask Configure<TScopeTask, TViewModel>(this TScopeTask scopeTask, TViewModel viewModel)
@@ -53,6 +53,5 @@ namespace devoft.ClientModel
                    .AttachTo(viewModel)
                    .Recording()
                    .DeferNotifyProperties<TScopeTask, TViewModel>();
-        
     }
 }

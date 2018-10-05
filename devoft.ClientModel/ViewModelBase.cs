@@ -336,6 +336,15 @@ namespace devoft.ClientModel
             ((IDictionary<string, object>)Commands).Clear();
             _values.Clear();
         }
+
+        public class Scope : ViewModelScopeTaskBase<Scope, TInheritor> { }
+
+        public Scope BeginScope(Action<ScopeContext> action, ScopeContext parentScope = null)
+            => Scope.Define(action).Configure((TInheritor) this).ScopedTo(parentScope);
+
+        public Scope BeginScope(Func<ScopeContext, Task> action, ScopeContext parentScope = null)
+            => Scope.Define(action).Configure((TInheritor)this).ScopedTo(parentScope);
+
     }
 
     public static class ViewModelExtensions

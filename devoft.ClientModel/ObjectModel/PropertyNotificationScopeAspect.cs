@@ -11,10 +11,10 @@ namespace devoft.ClientModel.ObjectModel
     public class PropertyNotificationScopeAspect
         : ScopeAspectBase<PropertyNotificationScopeAspect>
     {
-        private Action<object, string> _notificationAction;
+        private Action<object, string[]> _notificationAction;
         private PropertyChangeRecord.EqualityByTargetAndProperty _comparer = new PropertyChangeRecord.EqualityByTargetAndProperty();
 
-        public PropertyNotificationScopeAspect(Action<object, string> notificationAction)
+        public PropertyNotificationScopeAspect(Action<object, string[]> notificationAction)
         {
             _notificationAction = notificationAction;
         }
@@ -22,13 +22,18 @@ namespace devoft.ClientModel.ObjectModel
         public override void End(ScopeContext context, bool result)
         {
             base.End(context, result);
-            if (result)
-                context.Get<ScopeRecorder>()
+            if (result && _notificationAction != null)
+            {
+                var group = context.Get<ScopeRecorder>()
                        ?.Records
                         .OfType<PropertyChangeRecord>()
                         .Where(r => r.Target is IPropertyChangedNotifier)
                         .Distinct(_comparer)
-                        .ForEach(record => _notificationAction(record.Target, record.PropertyName));
+                        .Select(r => new { Record = r, Property = r.PropertyName })
+                        .GroupBy(r => r.Record.Target);
+                foreach (var g in group)
+                    _notificationAction(g.Key, g.Select(r => r.Property).ToArray());
+            }
         }
 
         public static void TryRecordOrElseNotify<TOwner, TResult>(ScopeContext scopeContext, TOwner owner, string propertyName, TResult oldValue, TResult value, bool isRecordingEnabled)
@@ -57,7 +62,7 @@ namespace devoft.ClientModel.ObjectModel
             where TViewModel : IPropertyChangedNotifier
         {
             scopeTask.AddAspects(new PropertyNotificationScopeAspect(
-                (obj, prop) => PropertyNotificationManager<TViewModel>.PropagateNotification(viewModel, prop)));
+                (obj, props) => PropertyNotificationManager<TViewModel>.PropagateNotification(viewModel, props)));
 
             return scopeTask;
         }
@@ -68,7 +73,7 @@ namespace devoft.ClientModel.ObjectModel
         {
             var viewModel = viewModelScopeTask.ViewModel;
             viewModelScopeTask.AddAspects(new PropertyNotificationScopeAspect(
-                (obj, prop) => PropertyNotificationManager<TViewModel>.PropagateNotification(viewModel, prop)));
+                (obj, props) => PropertyNotificationManager<TViewModel>.PropagateNotification(viewModel, props)));
 
             return viewModelScopeTask;
         }
