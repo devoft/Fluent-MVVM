@@ -73,11 +73,48 @@ namespace devoft.ClientModel.Test
                 .Validate((t, v, vr) => vr.Error(string.IsNullOrWhiteSpace(v), "Name cannot be empty or whitespace"), notifyChangeOnValidationError: true);
             Name = "";
             var results = GetValidationResults(nameof(Name));
-            Assert.AreEqual(results.Count, 1);
-            Assert.AreEqual(results[0].Message, "Name cannot be empty or whitespace");
-            Assert.AreEqual(results[0].Exception.Message, "Name cannot be empty or whitespace");
+            Assert.AreEqual(1, results.Count);
+            Assert.AreEqual("Name cannot be empty or whitespace", results[0].Message);
+            Assert.AreEqual("Name cannot be empty or whitespace", results[0].Exception.Message);
         }
 
+        [TestMethod]
+        public void TestInvalidEmail()
+        {
+            RegisterProperty(x => x.Email)
+                .Validate((t,v,vr) => vr.Error<ValidEmail>(v, $"{v} is wrong"));
+            Email = "abc@defg";
+            Assert.AreEqual("abc@defg is wrong", GetValidationResults(nameof(Email)).FirstOrDefault()?.Message);
+        }
+
+        [TestMethod]
+        public void TestValidEmail()
+        {
+            RegisterProperty(x => x.Email)
+                .Validate((t, v, vr) => vr.Error<ValidEmail>(v, $"{v} is wrong"));
+            Email = "abc@defg.hij";
+            var results = GetValidationResults(nameof(Email));
+            Assert.AreEqual(0, results.Count);
+        }
+
+        [TestMethod]
+        public void TestInvalidUrl()
+        {
+            RegisterProperty(x => x.Url)
+                .Validate((t, v, vr) => vr.Error<ValidUrl>(v, $"{v} is wrong"));
+            Url = "http:/www.aaa.zzz";
+            Assert.AreEqual("http:/www.aaa.zzz is wrong", GetValidationResults(nameof(Url)).FirstOrDefault()?.Message);
+        }
+
+        [TestMethod]
+        public void TestValidUrl()
+        {
+            RegisterProperty(x => x.Url)
+                .Validate((t, v, vr) => vr.Error<ValidUrl>(v, $"{v} is wrong"));
+            Url = "https://www.aaa.zzz";
+            var results = GetValidationResults(nameof(Url));
+            Assert.AreEqual(0, results.Count);
+        }
 
         [TestMethod]
         public void TestCoerceOnProperty()
@@ -277,6 +314,14 @@ namespace devoft.ClientModel.Test
 
         #region [ = Email = ]
         public string Email
+        {
+            get => GetValue<string>();
+            set => SetValue(value);
+        }
+        #endregion
+
+        #region [ = Url = ]
+        public string Url
         {
             get => GetValue<string>();
             set => SetValue(value);
