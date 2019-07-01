@@ -3,14 +3,18 @@ A toolkit help to build MVVM client applications with Blazor, WPF, UWP, Xamarin 
 # Features #
 - [View Model base](https://github.com/devoft/Fluent-MVVM#view-model-definition)
 - [Property declaration](https://github.com/devoft/Fluent-MVVM#property-declaration)
-- [Automatic property changes notification propagation](https://github.com/devoft/Fluent-MVVM#property-change-notification-propagation)
+- [Propagation of Property change notification](https://github.com/devoft/Fluent-MVVM#propagation-of-property-change-notification)
 - [Automatic property value coercion](https://github.com/devoft/Fluent-MVVM#coerce-property-value)
 - [Validation](https://github.com/devoft/Fluent-MVVM#validation)
 - [Commands](https://github.com/devoft/Fluent-MVVM#commands)
 - [Scopes](https://github.com/devoft/Fluent-MVVM#scopes)
-  - [Property change notification optimized](https://github.com/devoft/Fluent-MVVM#property-change-notification-optimized)
+  - [Scopes are Observables](https://github.com/devoft/Fluent-MVVM#scopesare-observables)
   - [Undo](https://github.com/devoft/Fluent-MVVM#undo)
 - [Putting it all together](https://github.com/devoft/Fluent-MVVM#putting-it-all-together)
+  - [Property change propagation with Coerce](https://github.com/devoft/Fluent-MVVM#property-change-propagation-with-Coerce)
+  - [Property change with validation](https://github.com/devoft/Fluent-MVVM#property-change-with-validation)
+  - [Coerce with validation](https://github.com/devoft/Fluent-MVVM#coerce-with-validation)
+  - [Scope optimizes property change notifications](https://github.com/devoft/Fluent-MVVM#scope-optimizes-Property-change-notifications)
  
 ## View Model Definition ##
 Start by inheriting from `ViewModelBase<YourClass>` like this:
@@ -72,7 +76,7 @@ public class ContactEditor : ViewModelBase<ContactEditor>
     public string FullName => $"{FirstName} {LastName}";
 }
 ```
-## Property change notification propagation ##
+## Propagation of Property change notification ##
 
 By marking computed properties with the `[DependOn(dependencyProperty)]` attribute, every property-change notification happening on the *dependencyProperty* is propagated to this property, which means that another change notification will be raised for this property. In the following code, **FullName** is attributed with `[DependOn]`:
 ```csharp
@@ -229,38 +233,69 @@ Every command registered this way will be invalidated when any property changes.
 See: [Putting it all together: Invalidate commands on property changes](https://github.com/devoft/Fluent-MVVM#invalidate-commands-on-property-changes)
 
 ## Scopes ##
-Use Scopes to work with the View Model features in a transactional way. The following example shows how to use scopes after configuring View Model for them. See how in the next section.
+Use Scopes to work with the View Model features in a transactional way. You can optimize property changes notifications, record changes to enable Undo/Redo operations, and so on...
 
-### Property change notification optimized ###
+Scopes are blocks of code defined using `BeginScope` and executed through `StartAsync`:
 ```csharp
 var scope = vm.BeginScope(sc =>
             {
-               vm.FirstName = "Johnn";
                vm.FirstName = "John";
-               vm.LastName = "Smit";
                vm.LastName = "Smith";
             });
 await scope.StartAsync();
 ```
-Doing this, the PropertyChanged event is raised once for `FirstName`, another time for `LastName`, and even when `FullName` is depending on both, it will be notified only once from the scope.
+### Scopes are Observables ###
+
+Scopes are `IObservable<object>` The way of notify partial results is using: `Yield(object)`:
+```csharp
+var scope = await vm.BeginScope(sc =>
+            {
+               for (var item in myList)
+                   sc.Yield(item);
+            })
+            .Observe(x => x.Subscribe(myObserver))
+            .StartAsync();
+```
+Use `Observe(Action<IObservable<object>>)` to react to scope yield-results, or even to apply [Reactive extensions](https://github.com/dotnet/reactive) queries:
+```csharp
+var scope = await vm.BeginScope(sc =>
+            {
+               for (var item in myContactList)
+                   sc.Yield(item);
+            })
+            .Observe(c => c.Where(c => c.Age >= 18)
+                           .DistinctUntilChanged()
+                           .Subscribe(Console.WriteLine))
+            .StartAsync();
+```
 
 ### Undo ###
+Using `UndoAsync` in the scope you can undo every changes applied in the scope to those properties registered with recording enabled:
+```csharp
+RegisterProperty(vm => vm.FirstName)
+    .EnableRecording();
+RegisterProperty(vm => vm.LastName);
+```
+Then you can apply `UndoAsync()` as follows:
 ```csharp
 var vm.FirstName = "Unknown";
+var vm.LastName = "Unknown";
 var scope = vm.BeginScope(sc =>
             {
                ...
                vm.FirstName = "John";
+               vm.LastName = "Wood";
             });
 await scope.StartAsync();
 await scope.UndoAsync();
-var name = vm.FirstName // name == "Unknown"
+var firstName = vm.FirstName // firstName == "Unknown"
+var lastName = vm.LastName // lastName == "Wood"
 ```
-
+From this example, see that because `EnableRecording` is not applied explicitly on *LastName* the change on this property during the scope was not undone through `UndoAsync`
 
 ## Putting it all together ##
 
-### Property change progagation with Coerce ###
+### Property change propagation with Coerce ###
 Property changes and its propagation will happen always after the coercions are applied on the source property. E.g:
 ```csharp
 contactEditor.PropertyChanged += (s.e) => 
@@ -297,6 +332,19 @@ it is safe to apply the Coerce with no errors
 
 ### Invalidate commands on property changes ###
 Every time one property is changed all registered commands are invalidated so their `CanExecute` method will be called and their event `CanExecuteChanged` will be raised.
+
+### Scope optimizes Property change notifications ###
+```csharp
+var scope = vm.BeginScope(sc =>
+            {
+               vm.FirstName = "Johnn";
+               vm.FirstName = "John";
+               vm.LastName = "Smit";
+               vm.LastName = "Smith";
+            });
+await scope.StartAsync();
+```
+Doing this, the PropertyChanged event is raised once for `FirstName`, another time for `LastName`, and even when `FullName` is depending on both, it will be notified only once from the scope.
 
 # Getting Started
 Just add devoft.ClientModel as a dependency and start coding
