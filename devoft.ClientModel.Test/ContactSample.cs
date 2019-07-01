@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using devoft.ClientModel.ObjectModel;
 using devoft.ClientModel.Validation;
 
 namespace devoft.ClientModel.Test
@@ -62,26 +63,24 @@ namespace devoft.ClientModel.Test
         }
         #endregion 
 
-        #region [ = Name = ]
-        public string Name
+
+        public string FirstName
         {
             get => GetValue<string>();
             set => SetValue(value);
         }
-        #endregion
 
-        #region [ = LastName = ]
         public string LastName
         {
             get => GetValue<string>();
             set => SetValue(value);
         }
-        #endregion
 
-        #region [ = FullName ]
+        [DependOn(nameof(FirstName))]
+        [DependOn(nameof(LastName))]
         public string FullName
-            => $"{Name} {LastName}";
-        #endregion
+            => $"{FirstName} {LastName}";
+
 
         #region [ = Email = ]
         public string Email

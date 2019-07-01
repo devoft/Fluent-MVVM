@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using devoft.Core.Patterns;
-using devoft.Core.System;
-using devoft.Core.Patterns;
+using devoft.System;
+using devoft.System.Collections.Generic;
 
 namespace devoft.ClientModel.ObjectModel
 {

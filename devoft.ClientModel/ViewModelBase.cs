@@ -13,7 +13,8 @@ using System.Windows.Input;
 using devoft.Core.Patterns;
 using System.Threading.Tasks;
 using devoft.Core.Patterns.Scoping;
-using devoft.Core.System.Collections.Generic;
+using devoft.System.Collections.Generic;
+using devoft.System;
 
 namespace devoft.ClientModel
 {

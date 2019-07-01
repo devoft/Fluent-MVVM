@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.28010.2016
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "devoft.ClientModel", "devoft.ClientModel\devoft.ClientModel.csproj", "{6BDFB196-482F-4717-B670-6A2F82D6F924}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "devoft.ClientModel.Test", "devoft.ClientModel.Test\devoft.ClientModel.Test.csproj", "{84CD4506-7899-4B67-BF77-0ADCA1F3475F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{6BDFB196-482F-4717-B670-6A2F82D6F924}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6BDFB196-482F-4717-B670-6A2F82D6F924}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6BDFB196-482F-4717-B670-6A2F82D6F924}.Release|Any CPU.Build.0 = Release|Any CPU
-		{84CD4506-7899-4B67-BF77-0ADCA1F3475F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{84CD4506-7899-4B67-BF77-0ADCA1F3475F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{84CD4506-7899-4B67-BF77-0ADCA1F3475F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{84CD4506-7899-4B67-BF77-0ADCA1F3475F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
