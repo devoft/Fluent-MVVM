@@ -1,4 +1,5 @@
-﻿using System;
+﻿using devoft.System;
+using System;
 
 namespace devoft.ClientModel.Validation
 {
