@@ -250,7 +250,7 @@ Scopes are `IObservable<object>` The way of notify partial results is using: `Yi
 ```csharp
 var scope = await vm.BeginScope(sc =>
             {
-               for (var item in myList)
+               foreach (var item in myList)
                    sc.Yield(item);
             })
             .Observe(x => x.Subscribe(myObserver))
@@ -260,7 +260,7 @@ Use `Observe(Action<IObservable<object>>)` to react to scope yield-results, or e
 ```csharp
 var scope = await vm.BeginScope(sc =>
             {
-               for (var item in myContactList)
+               foreach (var item in myContactList)
                    sc.Yield(item);
             })
             .Observe(c => c.Where(c => c.Age >= 18)
