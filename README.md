@@ -289,7 +289,7 @@ var scope = vm.BeginScope(sc =>
 await scope.StartAsync();
 await scope.UndoAsync();
 var firstName = vm.FirstName // firstName == "Unknown"
-var lastName = vm.LastName // lastName == "Wood"
+var lastName = vm.LastName // lastName == "Unknown"
 ```
 From this example, see that because `EnableRecording` is not applied explicitly on *LastName* the change on this property during the scope was not undone through `UndoAsync`
 
