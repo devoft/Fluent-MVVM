@@ -278,8 +278,7 @@ RegisterProperty(vm => vm.LastName);
 ```
 Then you can apply `UndoAsync()` as follows:
 ```csharp
-var vm.FirstName = "Unknown";
-var vm.LastName = "Unknown";
+(vm.FirstName, vm.LastName) = ("Unknown", "Unknown");
 var scope = vm.BeginScope(sc =>
             {
                ...
@@ -287,9 +286,10 @@ var scope = vm.BeginScope(sc =>
                vm.LastName = "Wood";
             });
 await scope.StartAsync();
+var (first, last) = (vm.FirstName, vm.LastName); // ("John", "Wood")
+
 await scope.UndoAsync();
-var firstName = vm.FirstName // firstName == "Unknown"
-var lastName = vm.LastName // lastName == "Unknown"
+var (first, last) = (vm.FirstName, vm.LastName); // ("Unknown", "Wood")
 ```
 From this example, see that because `EnableRecording` is not applied explicitly on *LastName* the change on this property during the scope was not undone through `UndoAsync`
 
