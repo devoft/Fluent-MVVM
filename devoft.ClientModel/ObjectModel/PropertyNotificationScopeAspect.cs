@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ namespace devoft.ClientModel.ObjectModel
         : ScopeAspectBase<PropertyNotificationScopeAspect>
     {
         private Action<object, string[]> _notificationAction;
-        private PropertyChangeRecord.EqualityByTargetAndProperty _comparer = new PropertyChangeRecord.EqualityByTargetAndProperty();
+        private IPropertyChangeRecord.EqualityByTargetAndProperty _comparer = new IPropertyChangeRecord.EqualityByTargetAndProperty();
 
         public PropertyNotificationScopeAspect(Action<object, string[]> notificationAction)
         {
@@ -21,16 +22,29 @@ namespace devoft.ClientModel.ObjectModel
 
         public override void End(ScopeContext context, bool result)
         {
+            //base.End(context, result);
+            //if (result && _notificationAction != null)
+            //{
+            //    var group = context.Get<ScopeRecorder>()
+            //           ?.Records
+            //            .OfType<PropertyChangeRecord>()
+            //            .Where(r => r.Target is IPropertyChangedNotifier)
+            //            .Distinct(_comparer)
+            //            .Select(r => new { Record = r, Property = r.PropertyName })
+            //            .GroupBy(r => r.Record.Target);
+            //    foreach (var g in group)
+            //        _notificationAction(g.Key, g.Select(r => r.Property).ToArray());
+            //}
             base.End(context, result);
             if (result && _notificationAction != null)
             {
                 var group = context.Get<ScopeRecorder>()
-                       ?.Records
-                        .OfType<PropertyChangeRecord>()
-                        .Where(r => r.Target is IPropertyChangedNotifier)
-                        .Distinct(_comparer)
-                        .Select(r => new { Record = r, Property = r.PropertyName })
-                        .GroupBy(r => r.Record.Target);
+                                   ?.Records
+                                    .OfType<IPropertyChangeRecord>()
+                                    .Where(r => r.Target is IPropertyChangedNotifier)
+                                    .Distinct(_comparer)
+                                    .Select(r => new { Record = r, Property = r.PropertyName })
+                                    .GroupBy(r => r.Record.Target);
                 foreach (var g in group)
                     _notificationAction(g.Key, g.Select(r => r.Property).ToArray());
             }
@@ -45,6 +59,24 @@ namespace devoft.ClientModel.ObjectModel
                 scopeContext.Get<ScopeRecorder>()
                             ?.Record(scopeContext,
                                      new PropertyChangeRecord(owner, propertyName, oldValue, value));
+
+                if (!scopeContext.ContainsKey<PropertyNotificationScopeAspect>())
+                    notify = true;
+            }
+            else notify = true;
+            if (notify)
+                PropertyNotificationManager<TOwner>.PropagateNotification(owner, propertyName);
+        }
+
+        public static void TryRecordOrElseNotify<TOwner>(ScopeContext scopeContext, TOwner owner, string propertyName, NotifyCollectionChangedEventArgs args, bool isRecordingEnabled)
+            where TOwner : IPropertyChangedNotifier
+        {
+            var notify = false;
+            if (scopeContext != null && isRecordingEnabled)
+            {
+                scopeContext.Get<ScopeRecorder>()
+                            ?.Record(scopeContext,
+                                     new CollectionChangeRecord(owner, propertyName, args));
 
                 if (!scopeContext.ContainsKey<PropertyNotificationScopeAspect>())
                     notify = true;

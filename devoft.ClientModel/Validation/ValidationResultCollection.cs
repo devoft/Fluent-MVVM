@@ -6,7 +6,9 @@ namespace devoft.ClientModel.Validation
 {
     public class ValidationResultCollection : List<ValidationResult>
     {
-        public bool IsSucceded => this.All(x => x.Kind != ValidationKind.Error);
+        public bool IsSucceded => this.All(x => x.Kind == ValidationKind.Success);
+
+        public bool HasErrors => this.Any(x => x.Kind == ValidationKind.Error);
 
         public void Error<TValidator>(object value, string message = null)
             where TValidator : IValidator, new()
@@ -40,11 +42,13 @@ namespace devoft.ClientModel.Validation
             => AddResult(message, ValidationKind.Information);
 
 
-        private ValidationResult Validate<TValidator>(object value, string message, ValidationKind kind)
-            where TValidator : IValidator, new()
+        public ValidationResult Validate<TValidator>(object value, string message, ValidationKind kind)
+            where TValidator : IValidator, new() 
+            => Validate(new TValidator(), value, message, kind);
+
+        public ValidationResult Validate(IValidator validator, object value, string message, ValidationKind kind)
         {
             ValidationResult result = null;
-            var validator = new TValidator();
             if (validator.Validate(value, message) is string msg)
             {
                 Add(result = new ValidationResult

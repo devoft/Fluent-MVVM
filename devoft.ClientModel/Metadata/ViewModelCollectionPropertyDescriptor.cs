@@ -1,25 +1,26 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using devoft.ClientModel.ObjectModel;
 using devoft.ClientModel.Validation;
 using devoft.Core.Patterns.Scoping;
 
-namespace devoft.ClientModel
+namespace devoft.ClientModel.Metadata
 {
     /// <summary>
     /// Entry point to fluent API configuration of the ViewModel properties behavior to property changes propagation, coercing, validation, etc.
     /// </summary>
     /// <typeparam name="TOwner">Property declaring type</typeparam>
     /// <typeparam name="TResult">Type of the property</typeparam>
-    public class ViewModelPropertyDescriptor<TOwner, TResult>
+    public class ViewModelCollectionPropertyDescriptor<TOwner, TResult>
         where TOwner : ViewModelBase<TOwner>
+        where TResult : IEnumerable
     {
         internal List<ValidationRecord> ValidationRecords { get; } = new List<ValidationRecord>();
-        internal List<Func<TResult, TResult>> Coerces { get; } = new List<Func<TResult, TResult>>();
-        internal List<Action<TResult>> Setters { get; } = new List<Action<TResult>>();
+        internal List<Action<TResult>> ChangedActions { get; } = new List<Action<TResult>>();
         internal bool ValidateAlways { get; } = true;
-        internal ViewModelPropertyDescriptor(string propertyName)
+        internal ViewModelCollectionPropertyDescriptor(string propertyName)
         {
             PropertyName = propertyName;
         }
@@ -48,47 +49,79 @@ namespace devoft.ClientModel
         /// The following example registers an error when a number is found on a person name, before coerce, the wrong value will be set and the change will be notified
         /// RegisterProperty<Person>(p => p.Name).Validate((t, v, vr) => vr.Error((v?.Any(ch => char.IsDigit(ch)) == true), "Cannot contain numbers"), notifyChangeOnValidationError: true, when: ValidationErrorBehavior.BeforeCoerce);
         /// </remarks>
-        public ViewModelPropertyDescriptor<TOwner, TResult> Validate(
-            Action<TOwner,TResult, ValidationResultCollection> validate,
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> Validate(
+            Action<TOwner, TResult, ValidationResultCollection> validate,
             bool continueOnValidationError = true,
-            bool notifyChangeOnValidationError = true,
-            ValidationErrorBehavior when = ValidationErrorBehavior.AfterCoerce)
+            bool notifyChangeOnValidationError = true)
         {
             ValidationRecords.Add(new ValidationRecord()
             {
                 Validate = validate,
                 ContinueOnValidationError = continueOnValidationError,
-                NotifyChangeOnValidationError = notifyChangeOnValidationError,
-                BehaviorOnCoerce = when
+                NotifyChangeOnValidationError = notifyChangeOnValidationError
             });
             return this;
         }
 
-        /// <summary>
-        /// Fluent API: Used apply transformation functions to the new values before set.
-        /// The coerce functions will receive the new value (or the coerced value from previous coerce function) 
-        /// and returns a new coerced value. Use this to resolve trivial errors (e.g. traling spaces)
-        /// Coerce functions will be applied in the same order they are defined, and before setting the value to the property.
-        /// </summary>
-        /// <param name="coerces">Coerce transformation functions</param>
-        /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> Coerce(params Func<TResult, TResult>[] coerces)
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> Validate(
+            Func<TOwner, TResult, bool> condition,
+            ValidationKind kind = ValidationKind.Error,
+            string message = null,
+            bool continueOnValidationError = true,
+            bool notifyChangeOnValidationError = true)
         {
-            foreach (var coerce in coerces)
-                Coerces.Add(coerce);
+            ValidationRecords.Add(new ValidationRecord()
+            {
+                Validate = (vm, x, res) => res.Validate(condition(vm, x), message, kind),
+                ContinueOnValidationError = continueOnValidationError,
+                NotifyChangeOnValidationError = notifyChangeOnValidationError
+            });
             return this;
         }
+
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> Validate<TValidator>(
+            ValidationKind kind = ValidationKind.Error,
+            string message = null,
+            bool continueOnValidationError = true,
+            bool notifyChangeOnValidationError = true)
+            where TValidator : IValidator, new()
+        {
+            ValidationRecords.Add(new ValidationRecord()
+            {
+                Validate = (vm, x, res) => res.Validate<TValidator>(x, message, kind),
+                ContinueOnValidationError = continueOnValidationError,
+                NotifyChangeOnValidationError = notifyChangeOnValidationError
+            });
+            return this;
+        }
+
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> Validate(
+            IValidator validator,
+            ValidationKind kind = ValidationKind.Error,
+            string message = null,
+            bool continueOnValidationError = true,
+            bool notifyChangeOnValidationError = true)
+        {
+            ValidationRecords.Add(new ValidationRecord()
+            {
+                Validate = (vm, x, res) => res.Validate(validator, x, message, kind),
+                ContinueOnValidationError = continueOnValidationError,
+                NotifyChangeOnValidationError = notifyChangeOnValidationError
+            });
+            return this;
+        }
+
 
         /// <summary>
         /// Used to provider a custom setting actions. This setters will be invoked just after the new
         /// value is set on the property. They setters will be executed in the same order they are defined
         /// </summary>
-        /// <param name="setters">A list of setters</param>
+        /// <param name="actions">A list of setters</param>
         /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> Set(params Action<TResult>[] setters)
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> OnChanged(params Action<TResult>[] actions)
         {
-            foreach (var setter in setters)
-                Setters.Add(setter);
+            foreach (var action in actions)
+                ChangedActions.Add(action);
             return this;
         }
 
@@ -96,7 +129,7 @@ namespace devoft.ClientModel
         /// Enables recording of property assignments when they are doing in an edition scope. <see cref="ScopeTaskBase{TInheritor}"/>
         /// </summary>
         /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> EnableRecording()
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> EnableRecording()
         {
             IsRecordingEnabled = true;
             return this;
@@ -108,7 +141,7 @@ namespace devoft.ClientModel
         /// <typeparam name="TDependencyResult">The type of the dependency property</typeparam>
         /// <param name="exp">Expression refering the dependency property</param>
         /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> DependOn<TDependencyResult>(Expression<Func<TOwner, TDependencyResult>> exp)
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> DependOn<TDependencyResult>(Expression<Func<TOwner, TDependencyResult>> exp)
         {
             PropertyNotificationManager<TOwner>.DependOn(PropertyName, ((MemberExpression)exp.Body).Member.Name);
             return this;
@@ -119,7 +152,7 @@ namespace devoft.ClientModel
         /// </summary>
         /// <param name="propertyNames">names of the dependency properties</param>
         /// <returns>this</returns>
-        public ViewModelPropertyDescriptor<TOwner, TResult> DependOn(params string[] propertyNames)
+        public ViewModelCollectionPropertyDescriptor<TOwner, TResult> DependOn(params string[] propertyNames)
         {
             PropertyNotificationManager<TOwner>.DependOn(PropertyName, propertyNames);
             return this;
@@ -130,7 +163,6 @@ namespace devoft.ClientModel
             public Action<TOwner, TResult, ValidationResultCollection> Validate { get; set; }
             public bool ContinueOnValidationError { get; set; }
             public bool NotifyChangeOnValidationError { get; set; }
-            public ValidationErrorBehavior BehaviorOnCoerce { get; internal set; }
         }
     }
 }

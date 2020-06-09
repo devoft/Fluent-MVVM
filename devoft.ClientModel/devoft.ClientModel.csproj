@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Version>1.1.0</Version>
     <PackageId>devoft.ClientModel</PackageId>
@@ -10,10 +10,8 @@
     <RootNamespace>devoft.ClientModel</RootNamespace>
     <PackageProjectUrl />
     <RepositoryUrl>https://github.com/devoft/Fluent-MVVM</RepositoryUrl>
-    <PackageTags>MVVM, WPF, UWP, Xamarin, Desktop, NET, Validation, Coerce, Undo, Redo, Scope, Reactive</PackageTags>
+    <PackageTags>MVVM, WPF, UWP, Xamarin, WinUi, Desktop, NET, Validation, Coerce, Undo, Redo, Scope, Reactive</PackageTags>
     <Company>devoft</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="devoft.Core" Version="2.0.0" />
-  </ItemGroup>
 </Project>

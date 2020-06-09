@@ -9,5 +9,4 @@ namespace devoft.ClientModel.Validation
         public string Validate(object value, string message = null)
             => value == null ? message ?? "Value cannot be null" : null;
     }
-
 }

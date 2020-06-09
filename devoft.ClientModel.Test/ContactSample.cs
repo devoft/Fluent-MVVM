@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using devoft.ClientModel.ObjectModel;
 using devoft.ClientModel.Validation;
+using devoft.System;
 
 namespace devoft.ClientModel.Test
 {
@@ -21,7 +22,7 @@ namespace devoft.ClientModel.Test
 
         public static void Initialize()
         {
-            RegisterProperty(x => x.Name)
+            RegisterProperty(x => x.FirstName)
                 .Validate((t, v, vr) => vr.Error<NotNull>(v), notifyChangeOnValidationError: true)
                 .Validate((t, v, vr) => vr.Error(string.IsNullOrWhiteSpace(v), "Name cannot be empty or whitespace"), notifyChangeOnValidationError: true)
                 .Coerce(name => name.Trim(),
@@ -33,7 +34,7 @@ namespace devoft.ClientModel.Test
                 .Coerce(name => name.Trim());
 
             RegisterProperty(x => x.FullName)
-                .DependOn(nameof(Name), nameof(LastName))
+                .DependOn(nameof(FirstName), nameof(LastName))
                 .Validate((t, v, vr) => vr.Error(string.IsNullOrWhiteSpace(v), "FullName cannot be empty or whitespace"));
 
             RegisterProperty(x => x.Age)

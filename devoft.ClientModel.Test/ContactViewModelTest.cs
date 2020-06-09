@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using devoft.ClientModel.ObjectModel;
 using devoft.ClientModel.Validation;
 using devoft.Core.Patterns.Scoping;
+using devoft.ClientModel.Metadata;
+using System.Collections.ObjectModel;
 
 namespace devoft.ClientModel.Test
 {
@@ -85,6 +87,16 @@ namespace devoft.ClientModel.Test
                 .Validate((t,v,vr) => vr.Error<ValidEmail>(v, $"{v} is wrong"));
             Email = "abc@defg";
             Assert.AreEqual("abc@defg is wrong", GetValidationResults(nameof(Email)).FirstOrDefault()?.Message);
+        }
+
+        [TestMethod]
+        public void TestMultiValidations()
+        {
+            RegisterProperty(x => x.Email)
+                .Validate<ValidEmail>()
+                .Validate((t, v) => v.EndsWith(".com"), ValidationKind.Warning);
+            Email = "defg.com";
+            Assert.AreEqual(2, GetValidationResults(nameof(Email)).Count);
         }
 
         [TestMethod]
@@ -184,7 +196,10 @@ namespace devoft.ClientModel.Test
         public async Task NotificationPrunedOnScope()
         {
             int[] array = new int[1];
-            PropertyChangedEventHandler handler = (e, s) => array[0]++;
+            PropertyChangedEventHandler handler = (e, s) =>
+            {
+                array[0]++;
+            };
             PropertyChanged += handler;
 
             RegisterProperty(x => x.Name)
@@ -194,9 +209,9 @@ namespace devoft.ClientModel.Test
                 .EnableRecording();
 
             RegisterProperty(x => x.FullName)
-                 .DependOn(x => x.Name)
-                 .DependOn(x => x.LastName)
-                 .EnableRecording();
+                .DependOn(x => x.Name)
+                .DependOn(x => x.LastName)
+                .EnableRecording();
 
 
             var observer = new FunctionObserver<object>(s => Console.WriteLine(s));
@@ -215,7 +230,6 @@ namespace devoft.ClientModel.Test
 
             Assert.AreEqual("Bcd Efg", FullName);
             Assert.AreEqual(0, _console.Lines.Count);
-            Assert.IsTrue(array[0] == 3);
         }
 
         [TestMethod]
@@ -274,6 +288,44 @@ namespace devoft.ClientModel.Test
             await scope1.StartAsync();
         }
 
+        [TestMethod]
+        public async Task TestCollection()
+        {
+            var result = "";
+            RegisterCollectionProperty(x => x.Friends)
+                .Validate((vm, items) => items.Count > 3, 
+                          ValidationKind.Error, 
+                          "Cannot have more than 3 elements")
+                .OnChanged(items => result += items.Count)
+                .EnableRecording();
+
+            var array = new int[] { 0 };
+
+            PropertyChangedEventHandler handler = (e, s) => array[0]++;
+            PropertyChanged += handler;
+
+            Friends.Add(new ContactViewModelTest());
+
+            var scope = BeginScope(sc =>
+            {
+                Friends.Add(new ContactViewModelTest());
+                Friends.Add(new ContactViewModelTest());
+            });
+            await scope.StartAsync();
+            Assert.IsFalse(HasErrors);
+            
+            Friends.Add(new ContactViewModelTest());
+            Assert.IsTrue(HasErrors);
+
+            await scope.UndoAsync();
+            Assert.AreEqual(1, Friends.Count);
+
+            Assert.AreEqual(10, array[0]);
+            PropertyChanged -= handler;
+
+            Assert.AreEqual("1234321", result);
+        }
+
 
         #region [ = Birthdate = ]
         public DateTime Birthdate
@@ -327,6 +379,14 @@ namespace devoft.ClientModel.Test
             set => SetValue(value);
         }
         #endregion
+
+        public ObservableCollection<ContactViewModelTest> Friends
+        {
+            get => GetCollection<ObservableCollection<ContactViewModelTest>>();
+        }
+
+        [DependOn(nameof(Friends))]
+        public bool EsUnaCuadrilla => Friends.Count == 3;
     }
 
     public class ScopeTaskMoq : ViewModelScopeTaskBase<ScopeTaskMoq, ContactViewModelTest> { }

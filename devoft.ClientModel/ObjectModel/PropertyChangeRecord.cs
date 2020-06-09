@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using devoft.Core.Patterns;
@@ -7,6 +6,7 @@ using devoft.System;
 
 namespace devoft.ClientModel.ObjectModel
 {
+
     public class PropertyChangeRecord : IUndoable
     {
         public PropertyChangeRecord(object target, string propertyName, object oldValue, object newValue)
@@ -33,15 +33,6 @@ namespace devoft.ClientModel.ObjectModel
         {
             await Task.Yield();
             Target.Set(PropertyName, OldValue);
-        }
-
-        public class EqualityByTargetAndProperty : IEqualityComparer<PropertyChangeRecord>
-        {
-            public bool Equals(PropertyChangeRecord x, PropertyChangeRecord y)
-                => Equals(x?.Target, y?.Target) && Equals(x?.PropertyName, y?.PropertyName);
-
-            public int GetHashCode(PropertyChangeRecord obj)
-                => (obj.Target + "." + obj.PropertyName).GetHashCode();
         }
     }
 }

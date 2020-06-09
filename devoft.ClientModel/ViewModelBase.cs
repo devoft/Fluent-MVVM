@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using devoft.Core.Patterns.Scoping;
 using devoft.System.Collections.Generic;
 using devoft.System;
+using devoft.ClientModel.Metadata;
+using System.Collections.Specialized;
 
 namespace devoft.ClientModel
 {
@@ -48,10 +50,15 @@ namespace devoft.ClientModel
         internal static Dictionary<string, object> PropertyDescriptors { get; } = new Dictionary<string, object>();
 
         /// <summary>
-        /// Return whether there are some validation errors
+        /// Return whether there are some validation results different from Success
         /// </summary>
-        public bool HasErrors => _values.Values.Any(x => !x.ValidationResults.IsSucceded);
-        
+        bool INotifyDataErrorInfo.HasErrors => _values.Values.Any(x => !x.ValidationResults.IsSucceded);
+
+        /// <summary>
+        /// Return whether there are some actual validation errors
+        /// </summary>
+        public bool HasErrors => _values.Values.Any(x => x.ValidationResults.HasErrors);
+
         /// <summary>
         /// Dispatcher object used to update properties on the UI thread
         /// </summary>
@@ -85,6 +92,38 @@ namespace devoft.ClientModel
                 return defValue;
             }
             return default(T);
+        }
+
+        /// <summary>
+        /// It is intended to be used as the implementation of the <b>get</b> accessors of the properties 
+        /// on the inheritor ViewModel class to get a configured observable collection./>
+        /// </summary>
+        /// <typeparam name="T">Type of the property</typeparam>
+        /// <param name="propertyName">Name of the property</param>
+        /// <param name="def">Initialization function used to return a default value when <see cref="SetValue{T}(T, string)"/> is not being called yet. When this method is used the <see cref="SetValue{T}(T, string)"/> is called to set the default value</param>
+        /// <returns>The Value set through <see cref="SetValue{T}(T, string)"/></returns>
+        public T GetCollection<T>([CallerMemberName] string propertyName = null, Func<T> def = null)
+            where T : class, ICollection, INotifyCollectionChanged, new()
+        {
+            if (_values.TryGetValue(propertyName, out IViewModelProperty property))
+                return ((ViewModelCollectionProperty<TInheritor, T>)property).Collection;
+            var defValue = def?.Invoke() ?? new T();
+            SetCollection(defValue, propertyName);
+            return defValue;
+        }
+
+        protected virtual void SetCollection<T>(T collection, [CallerMemberName] string propertyName = null)
+            where T : ICollection, INotifyCollectionChanged
+        {
+            if (!_values.TryGetValue(propertyName, out IViewModelProperty prop))
+            {
+                if (!PropertyDescriptors.ContainsKey(propertyName))
+                    PropertyDescriptors.Add(propertyName, new ViewModelCollectionPropertyDescriptor<TInheritor, T>(propertyName));
+                prop = new ViewModelCollectionProperty<TInheritor, T>();
+                _values.Add(propertyName, prop);
+            }
+
+            ((ViewModelCollectionProperty<TInheritor, T>)prop).SetValue((TInheritor)this, propertyName, collection);
         }
 
         /// <summary>
@@ -138,6 +177,33 @@ namespace devoft.ClientModel
                 result = desc as ViewModelPropertyDescriptor<TInheritor, TResult>;
             else
                 PropertyDescriptors.Add(propertyName, result = new ViewModelPropertyDescriptor<TInheritor, TResult>(propertyName));
+            return result;
+        }
+
+        /// <summary>
+        /// Fluent entry point to configure the viewmodel's property specified through the param: <paramref name="exp"/> (e.g. RegisterProperty(myViewModel => myViewModel.Property)) 
+        /// </summary>
+        /// <typeparam name="TResult">Type of the property</typeparam>
+        /// <param name="exp">Property reference expression</param>
+        /// <returns>A <see cref="ViewModelPropertyDescriptor{TOwner, TResult}"/> describing the property specified through <paramref name="exp"/></returns>
+        protected static ViewModelCollectionPropertyDescriptor<TInheritor, TResult> RegisterCollectionProperty<TResult>(Expression<Func<TInheritor, TResult>> exp)
+            where TResult : IEnumerable
+            => RegisterCollectionProperty<TResult>((exp.Body as MemberExpression).Member.Name);
+
+        /// <summary>
+        /// Fluent entry point to configure the viewmodel's property specified through the param: <paramref name="propertyName"/> (e.g. RegisterProperty(nameof(Property))) 
+        /// </summary>
+        /// <typeparam name="TResult">Type of the property</typeparam>
+        /// <param name="propertyName">Property name</param>
+        /// <returns>A <see cref="ViewModelPropertyDescriptor{TOwner, TResult}"/> describing the property specified through <paramref name="exp"/></returns>
+        protected internal static ViewModelCollectionPropertyDescriptor<TInheritor, TResult> RegisterCollectionProperty<TResult>(string propertyName)
+            where TResult : IEnumerable
+        {
+            ViewModelCollectionPropertyDescriptor<TInheritor, TResult> result;
+            if (PropertyDescriptors.TryGetValue(propertyName, out var desc))
+                result = desc as ViewModelCollectionPropertyDescriptor<TInheritor, TResult>;
+            else
+                PropertyDescriptors.Add(propertyName, result = new ViewModelCollectionPropertyDescriptor<TInheritor, TResult>(propertyName));
             return result;
         }
 
