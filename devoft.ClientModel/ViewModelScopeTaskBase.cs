@@ -46,12 +46,15 @@ namespace devoft.ClientModel
             return scopeTask;
         }
 
-        public static TScopeTask Configure<TScopeTask, TViewModel>(this TScopeTask scopeTask, TViewModel viewModel)
+        public static TScopeTask Configure<TScopeTask, TViewModel>(this TScopeTask scopeTask, TViewModel viewModel, bool deferredNotifications = true)
             where TScopeTask : ViewModelScopeTaskBase<TScopeTask, TViewModel>, new()
             where TViewModel : ViewModelBase<TViewModel>
-            => scopeTask
-                   .AttachTo(viewModel)
-                   .Recording()
-                   .DeferNotifyProperties<TScopeTask, TViewModel>();
+        {
+            var result = scopeTask.AttachTo(viewModel)
+                                  .Recording();
+            if (deferredNotifications)
+                result = result.DeferNotifyProperties<TScopeTask, TViewModel>();
+            return result;
+        }
     }
 }

@@ -238,20 +238,53 @@ namespace devoft.ClientModel.Test
             RegisterProperty(x => x.Name)
                 .EnableRecording();
 
+            RegisterCollectionProperty(x => x.Friends)
+                .EnableRecording();
+
+            await BeginScope(sc => Name = "Aaaa").StartAsync();
+            await BeginScope(sc => Name = "Bbbb").StartAsync();
+            await BeginScope(sc => Name = "Cccc").StartAsync();
+            await BeginScope(sc => Name = "Dddd").StartAsync();
+            await BeginScope(sc => Friends.Add(new ContactViewModelTest())).StartAsync();
+
+            Assert.AreEqual("Dddd", Name);
+            Assert.AreEqual(1, Friends.Count);
+
+            await Undo();
+            Assert.AreEqual(0, Friends.Count);
+            Assert.AreEqual("Dddd", Name);
+
+            await Undo();
+            Assert.AreEqual("Cccc", Name);
+
+            await Undo();
+            Assert.AreEqual("Bbbb", Name);
+
+            await Redo();
+            Assert.AreEqual("Cccc", Name);
+        }
+
+        [TestMethod]
+        public async Task UndoRedo1()
+        {
+            RegisterProperty(x => x.Name)
+                .EnableRecording();
+
             RegisterProperty(x => x.LastName)
                 .EnableRecording();
 
             var scope1 = BeginScope(sc =>
-                            {
-                                Name = "Aaaa";
-                                LastName = "Bbbb";
-                            });
+                         {
+                             Name = "Aaaa";
+                             LastName = "Bbbb";
+                         });
 
             var scope2 = BeginScope(sc =>
-                            {
-                                Name = "Cccc";
-                                LastName = "Dddd";
-                            });
+                         {
+                             Name = "Cccc";
+                             LastName = "Dddd";
+                         });
+
 
             await scope1.StartAsync();
             await scope2.StartAsync();

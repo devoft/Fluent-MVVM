@@ -265,12 +265,15 @@ namespace devoft.ClientModel
         /// </summary>
         public async Task Undo()
         {
-            if (!_scopesJournal.CanGoBack)
+            if (!CanUndo())
                 return;
 
             await _scopesJournal.Peek().UndoAsync();
             _scopesJournal.GoBack();
         }
+
+        public bool CanUndo()
+            => _scopesJournal.CanGoBack;
 
         /// <summary>
         /// Redo every change undone from the active edition scope (<see cref="ActiveScope"/>) 
@@ -279,12 +282,15 @@ namespace devoft.ClientModel
         /// </summary>
         public async Task Redo()
         {
-            if (!_scopesJournal.CanGoForward)
+            if (!CanRedo())
                 return;
 
             _scopesJournal.GoForward();
             await _scopesJournal.Peek().RedoAsync();
         }
+
+        public bool CanRedo()
+            => _scopesJournal.CanGoForward;
 
         #endregion
 
@@ -406,12 +412,16 @@ namespace devoft.ClientModel
 
         public class Scope : ViewModelScopeTaskBase<Scope, TInheritor> { }
 
-        public Scope BeginScope(Action<ScopeContext> action, ScopeContext parentScope = null)
-            => Scope.Define(action).Configure((TInheritor) this).ScopedTo(parentScope);
+        public Scope BeginScope(Action<ScopeContext> action, ScopeContext parentScope = null, bool deferNotifications = true)
+            => Scope.Define(action).Configure((TInheritor) this, deferNotifications).ScopedTo(parentScope);
 
-        public Scope BeginScope(Func<ScopeContext, Task> action, ScopeContext parentScope = null)
-            => Scope.Define(action).Configure((TInheritor)this).ScopedTo(parentScope);
+        public Scope BeginScope(Func<ScopeContext, Task> action, ScopeContext parentScope = null, bool deferNotifications = true)
+            => Scope.Define(action).Configure((TInheritor)this, deferNotifications).ScopedTo(parentScope);
 
+        public Task Record(Action<ScopeContext> action, bool deferNotifications = true)
+            => Dispatcher is null
+                ? BeginScope(action, deferNotifications: deferNotifications).StartAsync()
+                : BeginScope(s => Dispatcher.InvokeAsync(() => action(s)), deferNotifications: deferNotifications).StartAsync();
     }
 
     public static class ViewModelExtensions

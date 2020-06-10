@@ -37,6 +37,8 @@ namespace devoft.ClientModel.Metadata
             var successful = true;
             var notifyChangeOnValidationError = true;
             var descriptor = ViewModelBase<TOwner>.RegisterCollectionProperty<TResult>(propertyName);
+            if (descriptor is null)
+                throw new InvalidOperationException("Raw property found where collection property expected. Try using RegisterCollectionProperty instead of RegisterProperty");
 
             var scopeContext = owner.ActiveScope?.CurrentScopeContext;
 
