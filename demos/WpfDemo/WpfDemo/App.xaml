@@ -110,10 +110,43 @@
         <Style TargetType="TextBox">
             <Setter Property="Validation.ErrorTemplate" Value="{StaticResource validationTemplate}"/>
             <Setter Property="FontSize" Value="15px"/>
-            <Setter Property="Padding" Value="3,0"/>
+            <Setter Property="Padding" Value="3,2"/>
             <Setter Property="BorderThickness" Value="2"/>
             <Setter Property="Height" Value="32px"/>
             <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <Border x:Name="PART_ContentHost" 
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"/>
+                            <Border BorderThickness="{TemplateBinding BorderThickness}"
+                                    BorderBrush="Transparent"
+                                    Name="hint" Padding="{TemplateBinding Padding}"
+                                    Visibility="Collapsed"
+                                    IsHitTestVisible="False">
+                                <TextBlock Margin="{TemplateBinding Padding}"
+                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                       VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                       Text="{TemplateBinding ToolTip}"
+                                       FontStyle="Italic" 
+                                       Opacity="0.5"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="{x:Null}">
+                                <Setter TargetName="hint" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="hint" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="PasswordBox">

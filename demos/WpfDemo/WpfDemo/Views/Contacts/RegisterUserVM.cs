@@ -19,12 +19,10 @@ namespace WpfDemo.Views.Contacts
         static RegisterUserVM()
         {
             RegisterProperty(vm => vm.Name)
-                .Coerce(CoerceNames)
-                .Validate<NotEmpty>();
+                .Coerce(CoerceNames);
 
             RegisterProperty(vm => vm.LastName)
-                .Coerce(CoerceNames)
-                .Validate<NotEmpty>();
+                .Coerce(CoerceNames);
 
             RegisterProperty(vm => vm.Email)
                 .Validate<ValidEmail>()

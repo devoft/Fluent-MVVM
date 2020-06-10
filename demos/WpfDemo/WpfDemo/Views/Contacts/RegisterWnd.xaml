@@ -15,16 +15,20 @@
         <Border Background="#f4f4f4" BorderBrush="#eee" BorderThickness="0,0,0,1"/>
         <StackPanel Margin="20">
             <HeaderedContentControl Header="Name" Style="{StaticResource HCC.Field}">
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="eg. Adan Lee"/>
             </HeaderedContentControl>
             <HeaderedContentControl Header="Last name" Style="{StaticResource HCC.Field}">
-                <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBox Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="eg. Johnson"/>
             </HeaderedContentControl>
             <HeaderedContentControl Header="Email" Style="{StaticResource HCC.Field}">
-                <TextBox Text="{Binding Email}"/>
+                <TextBox Text="{Binding Email}"
+                         ToolTip="eg. aljTest@myorg.ong"/>
             </HeaderedContentControl>
             <HeaderedContentControl Header="Age" Style="{StaticResource HCC.Field}">
-                <TextBox Text="{Binding Age}"/>
+                <TextBox Text="{Binding Age}"
+                         ToolTip="0..120"/>
             </HeaderedContentControl>        
         </StackPanel>
         <StackPanel Grid.Row="1">
