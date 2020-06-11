@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.1.1</Version>
+    <Version>2.1.2</Version>
     <PackageId>devoft.ClientModel</PackageId>
     <Authors>devoft</Authors>
     <Product>devoft.ClientModel</Product>

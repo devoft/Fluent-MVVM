@@ -4,6 +4,7 @@
              xmlns:local="clr-namespace:WpfDemo"
              xmlns:validation="clr-namespace:devoft.ClientModel.Validation;assembly=devoft.ClientModel">
     <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="bool2visibility"/>
 
         <DrawingBrush x:Key="errorIcon" Stretch="Uniform">
             <DrawingBrush.Drawing>
@@ -86,12 +87,43 @@
             <Setter Property="BorderBrush" Value="Gray"/>
         </Style>
 
-        <Style x:Key="Btn.CommandIcon" TargetType="Button">
-            <Setter Property="Padding" Value="10,5"/>
+        <Style x:Key="Btn.ToolCommand" TargetType="Button">
+            <Setter Property="Width" Value="32px"/>
+            <Setter Property="Height" Value="32px"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="#eee"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Border Name="hover"
+                                    Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource bool2visibility}}"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"/>
+                            <Border Name="pressed" 
+                                    Visibility="{Binding IsPressed, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource bool2visibility}}"
+                                    Background="#2fff"
+                                    IsHitTestVisible="False"/>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.3"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Btn.CommandIcon" TargetType="Button" BasedOn="{StaticResource Btn.ToolCommand}">
             <Setter Property="FontSize" Value="16px"/>
             <Setter Property="FontFamily" Value="Segoe mdl2 assets"/>
-            <Setter Property="Background" Value="#ddd"/>
-            <Setter Property="BorderBrush" Value="Gray"/>
         </Style>
 
         <Style x:Key="HCC.Field" TargetType="HeaderedContentControl">

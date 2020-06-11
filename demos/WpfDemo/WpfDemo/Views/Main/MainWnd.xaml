@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WpfDemo.Views.Main"
         xmlns:validation="clr-namespace:devoft.ClientModel.Validation;assembly=devoft.ClientModel"
         mc:Ignorable="d"
-        Title="MainWnd" Height="450" Width="800">
+        Title="devoft WPF demo" Height="450" Width="800">
     <Window.CommandBindings>
         <CommandBinding Command="Undo" Executed="UndoExecuted" CanExecute="UndoCanExecute"/>
         <CommandBinding Command="Redo" Executed="RedoExecuted" CanExecute="RedoCanExecute"/>
@@ -18,46 +18,50 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0">
+            <TextBlock DockPanel.Dock="Left" Text="Users" FontSize="18px" FontFamily="Segoe UI Light"
+                       Margin="20"/>
             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="20">
                 <Button Style="{StaticResource Btn.CommandIcon}"
-                        Content="&#59303;"
+                        Content="&#59303;" ToolTip="Undo"
                         Command="Undo"/>
                 <Button Style="{StaticResource Btn.CommandIcon}"
-                        Content="&#59302;" Margin="10,0,0,0"
+                        Content="&#59302;" 
+                        ToolTip="Redo"
                         Command="Redo"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="20"
                         DockPanel.Dock="Right" HorizontalAlignment="Right">
-                <Button Style="{StaticResource Btn.Command}" 
-                    Click="AddUserBtn_Click"
-                    Content="Add user"/>
-                <Button Style="{StaticResource Btn.Command}" 
-                    CommandParameter="{Binding SelectedUser}"
-                    Command="{Binding Commands.Duplicate}"
-                    Margin="10,0,0,0"
-                    Content="Duplicate user"/>
-                <Button Style="{StaticResource Btn.Command}" 
-                    CommandParameter="{Binding SelectedUser}"
-                    Command="{Binding Commands.Remove}"
-                    Margin="10,0,0,0"
-                    Content="Remove user"/>
+                <Button Style="{StaticResource Btn.CommandIcon}" 
+                        Click="AddUserBtn_Click" ToolTip="Add user"
+                        Content="&#59152;"/>
+                <Button Style="{StaticResource Btn.ToolCommand}" 
+                        CommandParameter="{Binding SelectedUser}"
+                        Command="{Binding Commands.Duplicate}"
+                        ToolTip="Duplicate user"
+                        Content="2x" FontSize="16px"/>
+                <Button Style="{StaticResource Btn.CommandIcon}" 
+                        CommandParameter="{Binding SelectedUser}"
+                        Command="{Binding Commands.Remove}"
+                        ToolTip="Remove user"
+                    Content="&#59153;" />
             </StackPanel>
         </DockPanel>
 
-        <ListView x:Name="usersLV" ItemsSource="{Binding Users}"
-                  Grid.Row="1"
-                  SelectedItem="{Binding SelectedUser, Mode=TwoWay}">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn DisplayMemberBinding="{Binding FullName}" Header="User"
-                                    Width="200"/>
-                    <GridViewColumn DisplayMemberBinding="{Binding Email}" Header="Email"
-                                    Width="200"/>
-                    <GridViewColumn DisplayMemberBinding="{Binding Age}" Header="Age"
-                                    Width="100"/>
-                </GridView>
-            </ListView.View>
-        </ListView>
+        <ListBox x:Name="usersLV" ItemsSource="{Binding Users}"
+                 Grid.Row="1" Margin="20,0" BorderThickness="0,1,0,0"
+                 SelectedItem="{Binding SelectedUser, Mode=TwoWay}"
+                 Validation.ErrorTemplate="{x:Null}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="10">
+                        <TextBlock FontSize="16px" FontFamily="Segoe UI Semilight">
+                            <Run Text="{Binding FullName, Mode=OneWay}"/> - <Run Text="{Binding Age, Mode=OneWay}"/> years old
+                        </TextBlock >
+                        <TextBlock Text="{Binding Email}" FontSize="13px" FontFamily="Segoe UI Semibold"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
         <ItemsControl ItemsSource="{Binding UsersErrors}" Background="DarkRed"
                       Grid.Row="2">
             <ItemsControl.ItemTemplate>
